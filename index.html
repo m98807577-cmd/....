@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>InkHub – Genuine Ink & Printers</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --o: #ee4d2d; --od: #d73f21; --bg: #f5f5f5; --ink: #1f1f1f; --mut: #6b6b6b;
+  --line: #e9e9e9; --ok: #1a9b6c; --bad: #d93a3a; --y: #f5b400; --navy: #1f2a44; --teal: #0f766e;
+}
+* { box-sizing: border-box; }
+html { scroll-padding-top: 120px; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 14px/1.55 'Inter', 'Noto Sans Thai', system-ui, sans-serif;
+  overflow-x: hidden; -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; text-decoration: none; }
+button, input, select, textarea { font: inherit; color: inherit; }
+.w { max-width: 1200px; margin: auto; padding: 0 16px; }
+.g { color: var(--o); }
+.mut { color: var(--mut); font-size: 13px; }
+.mono { font-size: 11px; color: var(--mut); text-transform: uppercase; letter-spacing: .08em; font-weight: 500; }
+.i { flex: none; vertical-align: middle; }
+.i.thin { stroke-width: 1.1; }
+.i.fill { fill: currentColor; stroke: none; }
+.row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+ 
+/* Header */
+header { position: sticky; top: 0; z-index: 30; background: var(--o); color: #fff; box-shadow: 0 1px 0 rgba(0,0,0,.08); }
+.top { background: rgba(0,0,0,.1); font-size: 12.5px; }
+.top .row { height: 34px; }
+.top .l, .top .r { display: flex; align-items: center; gap: 18px; }
+.top span, .top a { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.top a:hover { opacity: .8; }
+.lang { display: inline-flex; border: 1px solid rgba(255,255,255,.5); border-radius: 99px; overflow: hidden; }
+.lang a { padding: 1px 11px; font-size: 12px; }
+.lang a.on { background: #fff; color: var(--o); font-weight: 600; }
+.nav { display: grid; grid-template-columns: 190px 1fr 70px; gap: 22px; align-items: center; padding: 10px 16px 6px; }
+.logo { display: flex; align-items: center; gap: 10px; font: 700 25px 'Inter'; letter-spacing: -.02em; }
+.sb { display: flex; background: #fff; border-radius: 4px; padding: 3px; }
+.sb input { border: 0; outline: 0; background: none; padding: 9px 12px; color: var(--ink); flex: 1; min-width: 0; }
+.sb button { background: var(--o); border: 0; color: #fff; padding: 0 22px; border-radius: 3px; cursor: pointer; display: grid; place-items: center; }
+.sb button:hover { background: var(--od); }
+.kw { display: flex; gap: 16px; font-size: 12px; margin-top: 7px; overflow: hidden; white-space: nowrap; }
+.kw a { opacity: .92; cursor: pointer; }
+.kw a:hover { text-decoration: underline; }
+.crt { position: relative; justify-self: center; display: grid; place-items: center; }
+.badge { position: absolute; top: -8px; right: -10px; background: #fff; color: var(--o); border-radius: 99px; font: 600 11px 'Inter'; min-width: 20px; text-align: center; padding: 1px 5px; border: 1px solid var(--o); }
+.badge.bump { animation: bump .5s; }
+@keyframes bump { 40% { transform: scale(1.5); } }
+ 
+/* Controls & Buttons */
+.btn { background: var(--o); color: #fff; border: 1px solid var(--o); border-radius: 4px; padding: 10px 20px; font-weight: 500; cursor: pointer; transition: .15s; display: inline-flex; gap: 8px; align-items: center; justify-content: center; }
+.btn:hover { background: var(--od); border-color: var(--od); }
+.btn.o { background: #fff; color: var(--o); }
+.btn.o:hover { background: #fff4f0; }
+.btn.s { padding: 5px 12px; font-size: 13px; }
+.btn.sq { width: 34px; height: 34px; padding: 0; }
+.btn.d { background: var(--bad); border-color: var(--bad); }
+.btn:disabled { opacity: .4; pointer-events: none; }
+.btn.blk { width: 100%; }
+input, select, textarea { background: #fff; border: 1px solid #d9d9d9; border-radius: 4px; padding: 9px 12px; width: 100%; outline: 0; transition: .15s; }
+input:focus, select:focus, textarea:focus { border-color: var(--o); box-shadow: 0 0 0 3px rgba(238,77,45,.12); }
+select { width: auto; }
+label { font-size: 13px; color: var(--mut); display: grid; gap: 5px; }
+.f { display: grid; gap: 12px; }
+.f2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.box { background: #fff; border-radius: 6px; padding: 22px; margin-bottom: 14px; border: 1px solid var(--line); }
+.two { display: grid; grid-template-columns: 1.6fr 1fr; gap: 14px; align-items: start; }
+.tag { font-size: 12px; padding: 2px 9px; border-radius: 3px; background: #fff0ec; color: var(--o); white-space: nowrap; font-weight: 500; }
+.tag.g { background: #e5f5ef; color: var(--ok); }
+.tag.r { background: #fdeaea; color: var(--bad); }
+.tag.y { background: #fff6d9; color: #9a6f00; }
+ 
+/* Hero & Banners */
+.hero { display: grid; grid-template-columns: 2fr 1fr; gap: 8px; margin-top: 20px; }
+.sld { position: relative; height: 300px; border-radius: 6px; overflow: hidden; }
+.sl { position: absolute; inset: 0; opacity: 0; transition: opacity .7s; display: flex; align-items: center; justify-content: space-between; padding: 0 56px; color: #fff; pointer-events: none; }
+.sl.on { opacity: 1; pointer-events: auto; }
+.sl h3 { font: 700 clamp(26px,3.6vw,42px)/1.12 'Inter','Noto Sans Thai'; letter-spacing: -.02em; margin: 0 0 10px; }
+.sl p { margin: 0 0 22px; font-size: 15px; opacity: .9; max-width: 380px; }
+.sl .cta { display: inline-flex; align-items: center; gap: 6px; background: #fff; color: var(--ink); font-weight: 600; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
+.dots { position: absolute; bottom: 12px; left: 0; right: 0; display: flex; justify-content: center; gap: 6px; }
+.dots i { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,.5); cursor: pointer; transition: .2s; }
+.dots i.on { background: #fff; width: 20px; border-radius: 4px; }
+.sd { display: grid; grid-template-rows: 1fr 1fr; gap: 8px; }
+.sp1 { background: #fff; border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; display: flex; gap: 14px; align-items: center; cursor: pointer; transition: .2s; overflow: hidden; }
+.sp1:hover { border-color: var(--o); }
+.sp1 .im { width: 104px; height: 104px; border-radius: 6px; background: #f6f6f6; display: grid; place-items: center; overflow: hidden; flex: none; }
+.sp1 .im img { width: 100%; height: 100%; object-fit: cover; }
+.sp1 .lb { font-size: 11px; color: var(--o); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+.sp1 b { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-weight: 500; line-height: 1.35; margin: 2px 0 4px; font-size: 14px; }
+.hp { width: 240px; height: 240px; background: #fff; border-radius: 12px; display: grid; place-items: center; overflow: hidden; flex: none; box-shadow: 0 14px 34px rgba(0,0,0,.28); }
+.hp img { width: 100%; height: 100%; object-fit: cover; }
+ 
+/* Perks & Sections */
+.pk { display: grid; grid-template-columns: repeat(6,1fr); gap: 6px; background: #fff; border-radius: 6px; margin-top: 14px; padding: 18px 8px; border: 1px solid var(--line); }
+.it { text-align: center; cursor: pointer; font-size: 13px; font-weight: 500; }
+.it .ib { width: 60px; height: 60px; border-radius: 14px; display: grid; place-items: center; margin: 0 auto 8px; background: #fff; border: 1px solid var(--line); transition: .2s; box-shadow: 0 1px 3px rgba(0,0,0,.05); }
+.it:hover .ib { transform: translateY(-3px); border-color: #f0b8aa; box-shadow: 0 6px 14px rgba(0,0,0,.09); }
+.sec { background: #fff; border-radius: 6px; margin-top: 14px; border: 1px solid var(--line); overflow: hidden; }
+.sh { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--line); gap: 12px; flex-wrap: wrap; }
+.sh h2 { margin: 0; font: 600 15px 'Inter','Noto Sans Thai'; text-transform: uppercase; letter-spacing: .03em; color: var(--mut); display: flex; align-items: center; gap: 8px; }
+.sh h2.o { color: var(--o); }
+.sh a { color: var(--o); font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 2px; }
+ 
+/* Grid & Cards */
+.vs { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; padding: 16px; }
+.vc { display: flex; border: 1px solid #f4c6bb; border-radius: 6px; background: #fff8f5; overflow: hidden; }
+.vc .vl { background: var(--o); color: #fff; width: 104px; display: grid; place-items: center; text-align: center; font: 700 22px/1.1 'Inter','Noto Sans Thai'; padding: 10px; position: relative; }
+.vc .vr { flex: 1; padding: 12px 14px; display: flex; flex-direction: column; justify-content: center; gap: 4px; border-left: 2px dashed #f4c6bb; }
+.cats { display: grid; grid-template-columns: repeat(auto-fill,minmax(150px,1fr)); }
+.cat { padding: 18px 10px; text-align: center; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); cursor: pointer; transition: .2s; margin: 0 -1px -1px 0; }
+.cat:hover, .cat.on { background: #fff8f5; }
+.cat .ci { width: 84px; height: 84px; border-radius: 8px; background: #f6f6f6; display: grid; place-items: center; margin: 0 auto 10px; overflow: hidden; transition: .2s; }
+.cat:hover .ci, .cat.on .ci { box-shadow: 0 0 0 2px var(--o); }
+.tabs { display: flex; background: #fff; border-bottom: 3px solid var(--o); margin-top: 14px; border-radius: 6px 6px 0 0; }
+.tabs div { flex: 1; text-align: center; padding: 14px; color: var(--o); font: 600 15px 'Inter','Noto Sans Thai'; text-transform: uppercase; letter-spacing: .03em; }
+.tools { display: flex; gap: 10px; align-items: center; background: #ececec; padding: 10px 14px; margin-bottom: 10px; flex-wrap: wrap; }
+.chip { border: 1px solid #d0d0d0; background: #fff; border-radius: 99px; padding: 4px 14px; font-size: 13px; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+.chip.on { border-color: var(--o); color: var(--o); background: #fff4f0; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(188px,1fr)); gap: 8px; padding-bottom: 40px; }
+.grid.fl, .grid.rv { padding: 16px; gap: 10px; }
+.card { position: relative; background: #fff; border-radius: 4px; overflow: hidden; transition: .18s; display: flex; flex-direction: column; border: 1px solid var(--line); }
+.card:hover { transform: translateY(-2px); border-color: var(--o); box-shadow: 0 6px 18px rgba(0,0,0,.08); }
+.th { display: grid; place-items: center; aspect-ratio: 1/1; background: #f6f6f6; overflow: hidden; }
+.dc { position: absolute; top: 0; right: 0; background: #fff3cf; color: var(--o); font: 600 12px 'Inter'; padding: 3px 7px 3px 8px; border-radius: 0 0 0 6px; }
+.hrt { position: absolute; top: 8px; left: 8px; width: 30px; height: 30px; border-radius: 50%; border: 0; background: rgba(255,255,255,.92); display: grid; place-items: center; cursor: pointer; color: #8a8a8a; transition: .2s; }
+.hrt:hover, .hrt.on { color: var(--bad); }
+.card .b { padding: 9px 10px 11px; display: flex; flex-direction: column; gap: 5px; flex: 1; }
+.card .nm { font-size: 13px; line-height: 1.35; height: 35px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.pr { font: 600 17px 'Inter'; color: var(--o); }
+.old { text-decoration: line-through; color: #a3a3a3; font-size: 12px; margin-left: 6px; }
+.sold { font-size: 11px; color: var(--mut); }
+.left { font-size: 11px; color: var(--bad); font-weight: 500; }
+.fs { font-size: 11px; border: 1px solid var(--ok); color: var(--ok); padding: 0 5px; border-radius: 2px; width: max-content; }
+.stk { height: 16px; border-radius: 99px; background: #fbd9d0; position: relative; overflow: hidden; }
+.stk i { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg,#ff7a45,var(--o)); border-radius: 99px; }
+.stk span { position: absolute; inset: 0; display: grid; place-items: center; font: 600 10.5px 'Inter'; color: #fff; text-transform: uppercase; }
+.star { color: #f5a300; font-size: 12px; display: inline-flex; align-items: center; gap: 3px; }
+ 
+/* Tables, Details & Extras */
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 11px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--mut); font-weight: 500; font-size: 12px; background: #fafafa; }
+.sc { overflow-x: auto; }
+.tl { display: flex; margin: 16px 0 6px; }
+.tl div { flex: 1; text-align: center; font-size: 12px; color: var(--mut); position: relative; }
+.tl div:before { content: ""; display: block; width: 14px; height: 14px; border-radius: 50%; background: #fff; border: 2px solid #ccc; margin: 0 auto 6px; position: relative; z-index: 1; }
+.tl div:after { content: ""; position: absolute; top: 6px; left: -50%; width: 100%; height: 2px; background: #ddd; }
+.tl div:first-child:after { display: none; }
+.tl .on { color: var(--ink); }
+.tl .on:before { background: var(--o); border-color: var(--o); }
+.tl .on:after { background: var(--o); }
+.pay { display: grid; gap: 8px; }
+.pay label { flex-direction: row; display: flex; gap: 12px; align-items: center; border: 1px solid var(--line); border-radius: 4px; padding: 12px; color: var(--ink); cursor: pointer; }
+.pay label:has(input:checked) { border-color: var(--o); background: #fff8f5; }
+.pay input { width: auto; }
+.nb { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--o); color: #fff; font: 600 12px 'Inter'; margin-right: 8px; }
+.qr { width: 150px; height: 150px; margin: 10px auto; background: repeating-conic-gradient(#000 0 25%,#fff 0 50%) 0 0/18px 18px; border: 10px solid #fff; outline: 1px solid var(--line); }
+.crumb { padding: 16px 0; color: var(--mut); display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.crumb a { color: var(--o); }
+.pband { background: #fafafa; padding: 14px 18px; margin: 12px 0; }
+.pband .pr { font-size: 30px; }
+.qb { display: inline-flex; }
+.qb button { width: 34px; border: 1px solid #d9d9d9; background: #fff; cursor: pointer; display: grid; place-items: center; }
+.qb input { width: 56px; text-align: center; border-radius: 0; border-left: 0; border-right: 0; }
+.pf { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+.pf div { display: flex; gap: 10px; align-items: center; font-size: 12.5px; color: var(--mut); }
+.pf .i { color: var(--o); }
+.fsb { background: #fff; border: 1px solid var(--line); border-radius: 6px; padding: 14px 18px; margin-bottom: 14px; }
+.fsb .bar { height: 8px; border-radius: 99px; background: #eee; margin-top: 10px; overflow: hidden; }
+.fsb .bar i { display: block; height: 100%; background: var(--o); border-radius: 99px; transition: width .6s; }
+.wal { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 0; }
+.auth { max-width: 400px; margin: 50px auto; }
+.authbg { background: var(--o); min-height: calc(100vh - 150px); padding: 30px 0; }
+.adm { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+.side { background: #fff; border-right: 1px solid var(--line); padding: 20px 14px; display: flex; flex-direction: column; gap: 4px; position: sticky; top: 0; height: 100vh; }
+.side a { padding: 10px 14px; border-radius: 4px; color: var(--mut); cursor: pointer; font-weight: 500; display: flex; gap: 10px; align-items: center; }
+.side a.on, .side a:hover { background: #fff4f0; color: var(--o); }
+.sp { flex: 1; }
+.main { padding: 28px; overflow-x: auto; }
+.st { display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap: 14px; margin: 18px 0; }
+.st .box { margin: 0; }
+.st b { font: 600 28px 'Inter'; display: block; }
+.bars { display: flex; align-items: flex-end; gap: 12px; height: 160px; }
+.bars div { flex: 1; text-align: center; font-size: 11px; color: var(--mut); display: flex; flex-direction: column; justify-content: flex-end; height: 100%; }
+.bars i { display: block; border-radius: 3px 3px 0 0; background: var(--o); min-height: 3px; margin-bottom: 6px; }
+ 
+/* Feedback, Floating & Modals */
+#toast { position: fixed; bottom: calc(24px + env(safe-area-inset-bottom,0px)); left: 50%; transform: translate(-50%,30px); opacity: 0; background: rgba(20,20,20,.9); color: #fff; padding: 11px 22px; border-radius: 6px; z-index: 99; transition: .3s; pointer-events: none; }
+#toast.on { opacity: 1; transform: translate(-50%,0); }
+.fade { animation: fi .35s both; }
+@keyframes fi { from { opacity: 0; transform: translateY(8px); } }
+.ld { display: grid; place-items: center; height: 60vh; color: var(--mut); }
+footer { background: #fff; border-top: 3px solid var(--o); margin-top: 34px; padding: 34px 0 20px; color: var(--mut); font-size: 13px; }
+.fg { display: grid; grid-template-columns: repeat(3,1fr); gap: 24px; margin-bottom: 24px; }
+.fg b { display: block; color: var(--ink); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px; }
+.fg span { display: block; margin-bottom: 6px; }
+.fab { position: fixed; right: 18px; bottom: 78px; z-index: 40; background: var(--o); color: #fff; border: 0; border-radius: 99px; padding: 11px 18px 11px 14px; display: flex; gap: 8px; align-items: center; font-weight: 600; cursor: pointer; box-shadow: 0 6px 18px rgba(238,77,45,.4); transition: .2s; }
+.fab:hover { transform: translateY(-2px); }
+.fab svg { animation: spin 8s linear infinite; }
+@keyframes spin { to { transform: rotate(1turn); } }
+#up { position: fixed; right: 18px; bottom: 22px; z-index: 40; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line); background: #fff; display: none; place-items: center; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,.12); }
+#up.on { display: grid; }
+.adm-on .fab, .adm-on #up, .adm-on #rp { display: none !important; }
+#rp { position: fixed; left: 18px; bottom: 24px; z-index: 40; background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; display: flex; gap: 10px; align-items: center; box-shadow: 0 8px 24px rgba(0,0,0,.14); max-width: 300px; transform: translateY(20px); opacity: 0; pointer-events: none; transition: .4s; font-size: 13px; }
+#rp.on { transform: none; opacity: 1; }
+#rp .rpi { width: 34px; height: 34px; border-radius: 50%; background: #fff4f0; color: var(--o); display: grid; place-items: center; flex: none; }
+.md { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 80; display: none; place-items: center; padding: 16px; }
+.md.on { display: grid; }
+.mb { background: #fff; border-radius: 12px; width: 100%; max-width: 400px; padding: 26px 24px 24px; text-align: center; position: relative; }
+.mb h3 { margin: 0 0 4px; font: 700 20px 'Inter','Noto Sans Thai'; }
+.mx { position: absolute; top: 12px; right: 12px; border: 0; background: #f3f3f3; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; display: grid; place-items: center; }
+.wh { position: relative; width: 290px; height: 290px; margin: 18px auto; }
+.wh svg.w1 { width: 100%; height: 100%; transition: transform 5s cubic-bezier(.12,.7,.08,1); filter: drop-shadow(0 4px 10px rgba(0,0,0,.15)); }
+.wh .pt { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); z-index: 2; }
+.wh .hub { position: absolute; left: 50%; top: 50%; width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%; background: #fff; border: 3px solid var(--o); display: grid; place-items: center; color: var(--o); }
+ 
+@media(max-width: 800px) {
+  .hp { width: 110px; height: 110px; }
+  .sl > div:first-child { max-width: 62%; }
+  .sp1 .im { width: 72px; height: 72px; }
+  .hero, .two, .adm, .fg, .vs { grid-template-columns: 1fr; }
+  .sd { grid-template-columns: 1fr 1fr; grid-template-rows: none; }
+  .pk { grid-template-columns: repeat(3,1fr); row-gap: 16px; }
+  .side { flex-direction: row; overflow-x: auto; height: auto; position: static; }
+  .nav { grid-template-columns: 1fr 50px; gap: 12px; }
+  .nav .logo { grid-column: 1/3; }
+  .top .l { display: none; }
+  .sld { height: 230px; }
+  .sl { padding: 0 22px; }
+  .sa, .kw { display: none; }
+  .f2, .pf { grid-template-columns: 1fr; }
+  .tabs { position: static; }
+}
+</style>
+</head>
+<body>
+<div id="app"><div class="ld">Loading…</div></div>
+<div id="toast"></div>
+<div id="rp"></div>
+<div class="md" id="md" onclick="if(event.target==this)closeM()"><div class="mb" id="mb"></div></div>
+<button id="up" onclick="scrollTo({top:0,behavior:'smooth'})" aria-label="Top"></button>
+<script>
+const mem = {}, LS = (k, v) => {
+  try {
+    if (v === undefined) return JSON.parse(localStorage.getItem(k));
+    localStorage.setItem(k, JSON.stringify(v));
+  } catch(e) {
+    if (v === undefined) return mem[k];
+    mem[k] = v;
+  }
+};
+ 
+/* ---------- i18n Dictionary ---------- */
+const T = {
+  en: {
+    topShip: 'Free shipping on orders over ฿1,500', hot: 'Hot deal', feat: 'Featured', viewP: 'View product', topGen: '100% genuine products', admin: 'Admin', orders: 'My orders', acct: 'Account', logout: 'Log out', signup: 'Sign up', login: 'Log in',
+    searchPh: 'Search by printer model, brand or product, e.g. L3250',
+    h1t: 'Genuine ink,<br>up to 50% off', h1p: 'Original cartridges and refills for Epson, Canon, HP and Brother.', shop: 'Shop now',
+    h2t: 'Printers for<br>home & office', h2p: 'Ink-tank, all-in-one and laser models with official warranty.', h2c: 'Browse printers',
+    h3t: 'Everyday paper,<br>low price', h3p: 'A4 copy paper and photo paper, shipped within 24 hours.', h3c: 'Browse paper',
+    b1t: 'Free shipping', b1p: 'On orders over ฿1,500', b2t: 'New here? Get 10% off', b2p: 'Claim voucher INK10',
+    pFree: 'Free shipping', pFlash: 'Flash sale', pVou: 'Vouchers', pSpin: 'Lucky spin', pBest: 'Best sellers', pNew: 'New arrivals',
+    vTitle: 'Vouchers for you', v10: '10% OFF', v10s: 'Any order, no minimum', vFree: 'FREE SHIP', vFrees: 'Standard delivery on any order', v50: '฿50 OFF', v50s: 'Min. spend ฿500', claim: 'Claim', claimed: 'Claimed',
+    flash: 'Flash sale', endsIn: 'Ends in', seeAll: 'See all', sold: 'Sold {0}', soldN: '{0} sold', cats: 'Categories', items: '{0} items', recent: 'Recently viewed', rec: 'Recommended for you',
+    sortBy: 'Sort by', sDef: 'Featured', sBest: 'Best selling', sNew: 'Newest', sLo: 'Price: low to high', sHi: 'Price: high to low', saved: 'Saved ({0})', deals: 'Deals', clear: 'Clear filters', total: '{0} products', none: 'No products found',
+    left: 'Only {0} left', soldOut: 'Sold out', freeTag: 'Free shipping', addCart: 'Add to cart', save: 'Save',
+    home: 'Home', brand: 'Brand', cat: 'Category', genuine: 'Genuine', compat: 'Compatible with', qty: 'Quantity', inStock: '{0} in stock', addBtn: 'Add to cart', buyNow: 'Buy now', shipL: 'Shipping', shipFree: 'Free', shipFee: '฿60 (free over ฿1,500)', pf1: '100% genuine', pf2: 'Ships within 24 hours', pf3: '7-day returns', nf: 'Product not found',
+    cartT: 'Shopping cart', prodH: 'Product', qtyH: 'Qty', totH: 'Total', remove: 'Remove', stockLeft: 'In stock: {0}', empty: 'Your cart is empty', startShop: 'Start shopping', fsAway: 'Add {0} more to get free shipping', fsDone: 'You have unlocked free shipping',
+    sumT: 'Order summary', subtotal: 'Subtotal', shipping: 'Shipping', freeW: 'Free', disc: 'Discount ({0})', totalL: 'Total', promoPh: 'Promo code', apply: 'Apply', toCheckout: 'Proceed to checkout', myVou: 'Your vouchers',
+    tAdded: 'Added to cart', tStock: 'Not enough stock', tCode: 'Voucher applied', tBad: 'Invalid code', tMin: 'Minimum spend not reached', tSaved: 'Saved', tClaim: 'Voucher added to your wallet', tAddr: 'Address saved', tNoAddr: 'Please add and select a shipping address', tOut: 'Out of stock: ', tPlaced: 'Order placed. No. ', tAcc: 'Account created', tUsed: 'Username or email already in use', tBadLogin: 'Incorrect username or password', tNoWrite: 'Could not save: no write access to shared data', tRep: 'Payment reported, awaiting admin check', tStatus: 'Status updated', tProd: 'Product saved',
+    checkout: 'Checkout', s1: 'Shipping address', s2: 'Delivery', s3: 'Payment method', addNew: 'Add new address', std: 'Standard, 2-3 days', exp: 'Express, next day', place: 'Place order', scan: 'Scan to pay after confirming (demo)', bankInfo: 'Kasikorn Bank 123-4-56789-0 · InkHub Co., Ltd.', cardNo: 'Card number',
+    recName: 'Recipient name', phone: 'Phone', address: 'Address', addrPh: 'House no., street, district', prov: 'Province', zip: 'Postal code', saveAddr: 'Save address',
+    st0: 'Awaiting payment', st1: 'Paid', st2: 'Preparing', st3: 'Shipped', st4: 'Completed', st5: 'Cancelled', pq: 'PromptPay QR', pb: 'Bank transfer', pc: 'Credit / debit card', pd: 'Cash on delivery',
+    myOrders: 'My orders', noOrders: 'No orders yet', trkNo: 'Tracking no.', shipTo: 'Ship to', repPay: 'Report payment', verify: 'Verifying payment', cancel: 'Cancel', recvd: 'Mark received', promptRef: 'Enter transfer reference / time, e.g. 14:30 ref 123456', confCancel: 'Cancel this order?',
+    myAcct: 'My account', profile: 'Profile', fullName: 'Full name', email: 'Email', newPass: 'New password', keep: 'Leave blank to keep', savebtn: 'Save', shipAddr: 'Shipping address', username: 'Username', uoe: 'Username or email', password: 'Password', createAcc: 'Create account', welcome: 'Welcome back', haveAcc: 'Already registered?', noAcc: 'No account yet?',
+    overview: 'Overview', aOrders: 'Orders', aProducts: 'Products', aMembers: 'Members', sales: 'Sales', pending: 'Pending', members: 'Members', sales7: 'Sales, last 7 days', lowStock: 'Low stock', noneL: 'None', orderNo: 'Order #', recipient: 'Recipient', totPay: 'Total / Payment', status: 'Status', parcel: 'Parcel', paid: 'Paid', carrier: 'Carrier, e.g. Flash', trkPh: 'Tracking no.', noOrd: 'No orders yet',
+    editP: 'Edit product', addP: 'Add product', pName: 'Product name', pBrand: 'Brand', pCat: 'Category', catPh: 'Type a category, e.g. Toner', pColor: 'Color', pPrice: 'Price', pOld: 'Original price (optional)', pStockL: 'Stock', pDesc: 'Description / compatible models', pSold: 'Starting sold count (optional)', photo: 'Product photo (JPG/PNG, auto-resized)', rmPhoto: 'Remove photo', cancelB: 'Cancel', edit: 'Edit', del: 'Delete', confDel: 'Delete this product?', nameL: 'Name', userL: 'Username', ordersL: 'Orders', joined: 'Joined', viewStore: 'View store', noMem: 'No members yet',
+    spinT: 'Spin to win a voucher', spinS: 'One free spin every day', spinGo: 'Spin', spinWon: 'You won: {0}', spinLose: 'Better luck tomorrow!', spinAgain: 'You already spun today. Come back tomorrow!', spinUse: 'Voucher saved. Use it at checkout.', spinCart: 'Go to cart', lTry: 'TRY AGAIN',
+    rpWho: 'Someone in {0} just bought', cust: 'Customer care', cust1: 'Email: admin@inkhub.th', cust2: 'Official warranty on all products', cust3: '7-day returns', shopT: 'Shopping with InkHub', shop1: 'Free shipping over ฿1,500', shop2: 'Ships within 24 hours', shop3: 'Tracking number on every parcel', payT: 'Payment methods', copy: '© 2026 InkHub · Genuine ink & printers shipped nationwide',
+    c_ink: 'Ink', c_printers: 'Printers', c_paper: 'Paper', c_accessories: 'Accessories'
+  },
+  th: {
+    topShip: 'ส่งฟรีเมื่อซื้อครบ ฿1,500', hot: 'ดีลเด็ด', feat: 'สินค้าแนะนำ', viewP: 'ดูสินค้า', topGen: 'สินค้าแท้ 100%', admin: 'แอดมิน', orders: 'คำสั่งซื้อ', acct: 'บัญชี', logout: 'ออกจากระบบ', signup: 'สมัครสมาชิก', login: 'เข้าสู่ระบบ',
+    searchPh: 'ค้นหาตามรุ่นเครื่องพิมพ์ ยี่ห้อ หรือสินค้า เช่น L3250',
+    h1t: 'หมึกแท้<br>ลดสูงสุด 50%', h1p: 'ตลับหมึกและหมึกเติมแท้ Epson, Canon, HP และ Brother', shop: 'ช้อปเลย',
+    h2t: 'เครื่องพิมพ์<br>สำหรับบ้านและออฟฟิศ', h2p: 'รุ่นอิงค์แท็งก์ ออลอินวัน และเลเซอร์ รับประกันศูนย์', h2c: 'ดูเครื่องพิมพ์',
+    h3t: 'กระดาษคุณภาพ<br>ราคาประหยัด', h3p: 'กระดาษถ่ายเอกสาร A4 และกระดาษโฟโต้ จัดส่งภายใน 24 ชม.', h3c: 'ดูกระดาษ',
+    b1t: 'ส่งฟรี', b1p: 'เมื่อซื้อครบ ฿1,500', b2t: 'ลูกค้าใหม่ ลด 10%', b2p: 'เก็บคูปอง INK10',
+    pFree: 'ส่งฟรี', pFlash: 'แฟลชเซล', pVou: 'คูปองส่วนลด', pSpin: 'หมุนรับโชค', pBest: 'ขายดี', pNew: 'สินค้าใหม่',
+    vTitle: 'คูปองสำหรับคุณ', v10: 'ลด 10%', v10s: 'ทุกออเดอร์ ไม่มีขั้นต่ำ', vFree: 'ส่งฟรี', vFrees: 'จัดส่งมาตรฐานทุกออเดอร์', v50: 'ลด ฿50', v50s: 'ขั้นต่ำ ฿500', claim: 'เก็บคูปอง', claimed: 'เก็บแล้ว',
+    flash: 'แฟลชเซล', endsIn: 'สิ้นสุดใน', seeAll: 'ดูทั้งหมด', sold: 'ขายแล้ว {0}', soldN: 'ขายแล้ว {0} ชิ้น', cats: 'หมวดหมู่', items: '{0} รายการ', recent: 'ดูล่าสุด', rec: 'สินค้าแนะนำสำหรับคุณ',
+    sortBy: 'เรียงโดย', sDef: 'แนะนำ', sBest: 'ขายดี', sNew: 'ใหม่ล่าสุด', sLo: 'ราคา: ต่ำไปสูง', sHi: 'ราคา: สูงไปต่ำ', saved: 'ที่บันทึกไว้ ({0})', deals: 'ลดราคา', clear: 'ล้างตัวกรอง', total: '{0} รายการ', none: 'ไม่พบสินค้า',
+    left: 'เหลือ {0} ชิ้น', soldOut: 'หมด', freeTag: 'ส่งฟรี', addCart: 'เพิ่มลงรถเข็น', save: 'บันทึก',
+    home: 'หน้าแรก', brand: 'แบรนด์', cat: 'หมวดหมู่', genuine: 'ของแท้', compat: 'ใช้ได้กับรุ่น', qty: 'จำนวน', inStock: 'มีสินค้า {0} ชิ้น', addBtn: 'เพิ่มลงรถเข็น', buyNow: 'ซื้อเลย', shipL: 'การจัดส่ง', shipFree: 'ฟรี', shipFee: '฿60 (ส่งฟรีเมื่อซื้อครบ ฿1,500)', pf1: 'ของแท้ 100%', pf2: 'จัดส่งภายใน 24 ชม.', pf3: 'คืนสินค้าได้ใน 7 วัน', nf: 'ไม่พบสินค้า',
+    cartT: 'รถเข็นสินค้า', prodH: 'สินค้า', qtyH: 'จำนวน', totH: 'รวม', remove: 'ลบ', stockLeft: 'คงเหลือ: {0}', empty: 'ยังไม่มีสินค้าในรถเข็น', startShop: 'เริ่มช้อป', fsAway: 'ซื้อเพิ่มอีก {0} รับสิทธิ์ส่งฟรี', fsDone: 'คุณได้รับสิทธิ์ส่งฟรีแล้ว',
+    sumT: 'สรุปคำสั่งซื้อ', subtotal: 'ยอดรวมสินค้า', shipping: 'ค่าจัดส่ง', freeW: 'ฟรี', disc: 'ส่วนลด ({0})', totalL: 'ยอดชำระทั้งหมด', promoPh: 'โค้ดส่วนลด', apply: 'ใช้โค้ด', toCheckout: 'ไปชำระเงิน', myVou: 'คูปองของคุณ',
+    tAdded: 'เพิ่มลงรถเข็นแล้ว', tStock: 'สินค้าในสต็อกไม่พอ', tCode: 'ใช้คูปองสำเร็จ', tBad: 'โค้ดไม่ถูกต้อง', tMin: 'ยอดซื้อยังไม่ถึงขั้นต่ำ', tSaved: 'บันทึกแล้ว', tClaim: 'เก็บคูปองเรียบร้อย', tAddr: 'บันทึกที่อยู่แล้ว', tNoAddr: 'กรุณาเพิ่มและเลือกที่อยู่จัดส่ง', tOut: 'สินค้าหมด: ', tPlaced: 'สั่งซื้อสำเร็จ เลขที่ ', tAcc: 'สร้างบัญชีสำเร็จ', tUsed: 'ชื่อผู้ใช้หรืออีเมลนี้ถูกใช้แล้ว', tBadLogin: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง', tNoWrite: 'บันทึกไม่ได้: ไม่มีสิทธิ์เขียนข้อมูลร่วม', tRep: 'แจ้งชำระเงินแล้ว รอแอดมินตรวจสอบ', tStatus: 'อัปเดตสถานะแล้ว', tProd: 'บันทึกสินค้าแล้ว',
+    checkout: 'ชำระเงิน', s1: 'ที่อยู่จัดส่ง', s2: 'การจัดส่ง', s3: 'วิธีชำระเงิน', addNew: 'เพิ่มที่อยู่ใหม่', std: 'มาตรฐาน 2-3 วัน', exp: 'ด่วนพิเศษ ส่งวันถัดไป', place: 'สั่งซื้อ', scan: 'สแกนเพื่อชำระเงินหลังกดสั่งซื้อ (เดโม)', bankInfo: 'ธนาคารกสิกรไทย 123-4-56789-0 · บจก. อิงค์ฮับ', cardNo: 'หมายเลขบัตร',
+    recName: 'ชื่อผู้รับ', phone: 'เบอร์โทร', address: 'ที่อยู่', addrPh: 'บ้านเลขที่ ถนน ตำบล/อำเภอ', prov: 'จังหวัด', zip: 'รหัสไปรษณีย์', saveAddr: 'บันทึกที่อยู่',
+    st0: 'รอชำระเงิน', st1: 'ชำระแล้ว', st2: 'กำลังเตรียมสินค้า', st3: 'จัดส่งแล้ว', st4: 'สำเร็จ', st5: 'ยกเลิก', pq: 'PromptPay QR', pb: 'โอนผ่านธนาคาร', pc: 'บัตรเครดิต / เดบิต', pd: 'เก็บเงินปลายทาง',
+    myOrders: 'คำสั่งซื้อของฉัน', noOrders: 'ยังไม่มีคำสั่งซื้อ', trkNo: 'เลขพัสดุ', shipTo: 'จัดส่งที่', repPay: 'แจ้งชำระเงิน', verify: 'กำลังตรวจสอบการชำระเงิน', cancel: 'ยกเลิก', recvd: 'ได้รับสินค้าแล้ว', promptRef: 'กรอกเลขอ้างอิง / เวลาโอน เช่น 14:30 ref 123456', confCancel: 'ยกเลิกคำสั่งซื้อนี้?',
+    myAcct: 'บัญชีของฉัน', profile: 'ข้อมูลส่วนตัว', fullName: 'ชื่อ-นามสกุล', email: 'อีเมล', newPass: 'รหัสผ่านใหม่', keep: 'เว้นว่างหากไม่เปลี่ยน', savebtn: 'บันทึก', shipAddr: 'ที่อยู่จัดส่ง', username: 'ชื่อผู้ใช้', uoe: 'ชื่อผู้ใช้ หรือ อีเมล', password: 'รหัสผ่าน', createAcc: 'สร้างบัญชี', welcome: 'ยินดีต้อนรับกลับ', haveAcc: 'มีบัญชีอยู่แล้ว?', noAcc: 'ยังไม่มีบัญชี?',
+    overview: 'ภาพรวม', aOrders: 'คำสั่งซื้อ', aProducts: 'สินค้า', aMembers: 'สมาชิก', sales: 'ยอดขาย', pending: 'รอดำเนินการ', members: 'สมาชิก', sales7: 'ยอดขาย 7 วันล่าสุด', lowStock: 'สินค้าใกล้หมด', noneL: 'ไม่มี', orderNo: 'เลขที่', recipient: 'ผู้รับ', totPay: 'ยอด / ชำระ', status: 'สถานะ', parcel: 'พัสดุ', paid: 'ชำระแล้ว', carrier: 'ขนส่ง เช่น Flash', trkPh: 'เลขพัสดุ', noOrd: 'ยังไม่มีคำสั่งซื้อ',
+    editP: 'แก้ไขสินค้า', addP: 'เพิ่มสินค้า', pName: 'ชื่อสินค้า', pBrand: 'ยี่ห้อ', pCat: 'หมวดหมู่', catPh: 'พิมพ์หมวดหมู่ เช่น Toner', pColor: 'สี', pPrice: 'ราคา', pOld: 'ราคาเดิม (ไม่บังคับ)', pStockL: 'สต็อก', pDesc: 'รายละเอียด / รุ่นที่ใช้ได้', pSold: 'ยอดขายเริ่มต้น (ไม่บังคับ)', photo: 'รูปสินค้า (JPG/PNG ย่อขนาดอัตโนมัติ)', rmPhoto: 'ลบรูป', cancelB: 'ยกเลิก', edit: 'แก้ไข', del: 'ลบ', confDel: 'ลบสินค้านี้?', nameL: 'ชื่อ', userL: 'ชื่อผู้ใช้', ordersL: 'คำสั่งซื้อ', joined: 'วันที่สมัคร', viewStore: 'ดูหน้าร้าน', noMem: 'ยังไม่มีสมาชิก',
+    spinT: 'หมุนวงล้อรับคูปอง', spinS: 'หมุนฟรีวันละ 1 ครั้ง', spinGo: 'หมุน', spinWon: 'คุณได้รับ: {0}', spinLose: 'พรุ่งนี้ลุ้นใหม่นะ!', spinAgain: 'วันนี้คุณหมุนแล้ว พรุ่งนี้มาใหม่!', spinUse: 'เก็บคูปองแล้ว ใช้ได้ตอนชำระเงิน', spinCart: 'ไปที่รถเข็น', lTry: 'ลุ้นใหม่',
+    rpWho: 'ลูกค้าจาก {0} เพิ่งสั่งซื้อ', cust: 'บริการลูกค้า', cust1: 'อีเมล: admin@inkhub.th', cust2: 'รับประกันศูนย์ทุกสินค้า', cust3: 'คืนสินค้าได้ใน 7 วัน', shopT: 'ช้อปกับ InkHub', shop1: 'ส่งฟรีเมื่อซื้อครบ ฿1,500', shop2: 'จัดส่งภายใน 24 ชม.', shop3: 'มีเลขพัสดุทุกพัสดุ', payT: 'ช่องทางชำระเงิน', copy: '© 2026 InkHub · หมึกแท้และเครื่องพิมพ์ จัดส่งทั่วประเทศ',
+    c_ink: 'หมึกพิมพ์', c_printers: 'เครื่องพิมพ์', c_paper: 'กระดาษ', c_accessories: 'อุปกรณ์เสริม'
+  }
+};
+ 
+let lang = LS('ink-lang') || 'en';
+const t = (k, ...a) => {
+  let s = (T[lang] && T[lang][k]) ?? T.en[k] ?? k;
+  a.forEach((v, i) => s = s.split('{' + i + '}').join(v));
+  return s;
+};
+const tc = c => T[lang]['c_' + String(c).toLowerCase()] || c, STN = i => t('st' + i), PAYN = k => t({ qr: 'pq', bank: 'pb', card: 'pc', cod: 'pd' }[k]);
+const setLang = l => { lang = l; LS('ink-lang', l); document.documentElement.lang = l; go(); };
+ 
+/* ---------- Icons & Visuals ---------- */
+const I = {
+  search: '<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4-4"/>',
+  cart: '<path d="M3 4h2.2l2 11h10.3l2-8H6.3"/><circle cx="9" cy="19.5" r="1.3"/><circle cx="17" cy="19.5" r="1.3"/>',
+  user: '<circle cx="12" cy="8" r="3.8"/><path d="M4.5 20c.8-3.6 3.8-5.5 7.5-5.5s6.7 1.9 7.5 5.5"/>',
+  truck: '<rect x="2.5" y="6" width="11" height="9.5" rx="1"/><path d="M13.5 9h4.2l2.8 3.2v3.3h-7"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/>',
+  bolt: '<path d="M13 2.5 5 13.5h6l-1 8 8-11h-6z"/>',
+  voucher: '<path d="M3.5 7.5h17v3a1.8 1.8 0 0 0 0 3.5v3h-17v-3a1.8 1.8 0 0 0 0-3.5z"/><path d="M14 7.5v9" stroke-dasharray="1.5 2"/>',
+  spin: '<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17M3.5 12h17M6 6l12 12M18 6 6 18"/>',
+  drop: '<path d="M12 3c3.5 4.2 6 7.2 6 10.2a6 6 0 0 1-12 0C6 10.2 8.5 7.2 12 3z"/>',
+  printer: '<path d="M7 9V3.5h10V9"/><rect x="3.5" y="9" width="17" height="8" rx="2"/><path d="M7 14.5h10V21H7z"/>',
+  sheet: '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/>',
+  plug: '<path d="M9 3v5M15 3v5M6.5 8h11v3a5.5 5.5 0 0 1-11 0z"/><path d="M12 16.5V21"/>',
+  box: '<path d="M3.5 7.5 12 3l8.5 4.5v9L12 21l-8.5-4.5z"/><path d="M3.5 7.5 12 12l8.5-4.5M12 12v9"/>',
+  shield: '<path d="M12 3 4.5 6v5.5c0 4.5 3 8 7.5 9.5 4.5-1.5 7.5-5 7.5-9.5V6z"/><path d="m9 12 2.2 2.2L15.5 10"/>',
+  card: '<rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="M3 10h18M7 15h3"/>',
+  chev: '<path d="m9 6 6 6-6 6"/>',
+  heart: '<path d="M12 20.5S4 15.5 4 9.8A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 8 2.2c0 5.7-8 10.7-8 10.7z"/>',
+  star: '<path d="m12 3.5 2.6 5.5 6 .8-4.4 4.2 1.1 6-5.3-2.9-5.3 2.9 1.1-6L3.4 9.8l6-.8z"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  minus: '<path d="M5 12h14"/>',
+  x: '<path d="m6 6 12 12M18 6 6 18"/>',
+  up: '<path d="M12 19V5M6 11l6-6 6 6"/>',
+  pin: '<path d="M12 21s6.5-5.6 6.5-11a6.5 6.5 0 0 0-13 0c0 5.4 6.5 11 6.5 11z"/><circle cx="12" cy="10" r="2.3"/>',
+  out: '<path d="M14 4h4.5v16H14M10 8l-4 4 4 4M6 12h9"/>',
+  store: '<path d="M4 9.5 5.5 4h13L20 9.5M4 9.5a2.7 2.7 0 0 0 5.3 0 2.7 2.7 0 0 0 5.4 0 2.7 2.7 0 0 0 5.3 0M5.5 12.5V20h13v-7.5"/>'
+};
+const ic = (n, s = 20, c = '') => `<svg class="i ${c}" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${I[n] || I.box}</svg>`;
+const logo = (bg = '#fff', fg = '#ee4d2d', s = 36) => `<svg width="${s}" height="${s}" viewBox="0 0 34 34"><rect width="34" height="34" rx="9" fill="${bg}"/><path d="M17 7c4.4 5.2 7.5 9 7.5 12.8a7.5 7.5 0 0 1-15 0C9.5 16 12.6 12.2 17 7z" fill="${fg}"/><path d="M13.5 20a3.5 3.5 0 0 0 3.5 3.5" stroke="${bg}" stroke-width="1.7" fill="none" stroke-linecap="round"/></svg>`;
+const kind = c => { c = String(c).toLowerCase(); return /ink|cartridge|toner|หมึก/.test(c) ? 'drop' : /print|เครื่อง/.test(c) ? 'printer' : /paper|กระดาษ/.test(c) ? 'sheet' : /access|cable|อุปกรณ์/.test(c) ? 'plug' : 'box'; };
+ 
+/* ---------- State & Supabase Integration ---------- */
+const COUP = { INK10: { p: .1 }, FREESHIP: { ship: 1 }, SAVE50: { f: 50, min: 500 } }, COLS = ['users', 'products', 'orders'];
+const $ = s => document.querySelector(s), E = s => String(s ?? '').replace(/[&<>"']/g, c => '&#' + c.charCodeAt(0) + ';'), B = n => '฿' + Math.round(n).toLocaleString('en-GB');
+let D = { users: {}, products: {}, orders: {} }, DB = null, ready = false, seeded = false, me = LS('ink-me'), cart = LS('ink-cart') || [], cat = '', q = '', sort = '', deal = false, onlyW = false, aTab = 'dash', editId = null, selA = '', selP = 'qr', selS = 'std', cp = null, slide = 0, bump = false, wl = LS('ink-wl') || [], wal = LS('ink-wallet') || [];
+ 
+const hash = async s => {
+  try {
+    const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('inkhub::' + s));
+    return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('');
+  } catch (e) { return s; }
+};
+ 
+/* กำหนด URL และ Key ของ Supabase ที่นี่ */
+const SUPA = {
+  url: 'https://fjadrimugdhljqidhibc.supabase.co',
+  key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZqYWRyaW11Z2RobGpxaWRoaWJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM0MTY5OTcsImV4cCI6MjEwODk5Mjk5N30.DbPV_OWsM6MYD80DBIYJDhEQf6x-6M_owVQ_WGR2dcE'
+};
+let SB = null;
+ 
+async function put(c, o) {
+  D[c][o.id] = o;
+  if (SB) {
+    const { error } = await SB.from(c).upsert({ id: o.id, data: o, updated_at: new Date().toISOString() });
+    if (error) { console.error(error); toast(t('tNoWrite')); return false; }
+  } else if (DB) {
+    try { await DB.collection(c + '_en').doc(o.id).set(o); } catch (e) { toast(t('tNoWrite')); return false; }
+  } else {
+    LS('ink-data-en', D);
+  }
+  return true;
+}
+ 
+async function rm(c, id) {
+  const backup = D[c][id];
+  delete D[c][id];
+  if (SB) {
+    const { data, error } = await SB.from(c).delete().eq('id', id).select('id');
+    let failed = !!error;
+    if (error) console.error(error);
+    else if (!data || !data.length) {
+      // 0 rows deleted: either already gone, or blocked by RLS -> check
+      const chk = await SB.from(c).select('id').eq('id', id);
+      if (chk.error || (chk.data && chk.data.length)) failed = true;
+    }
+    if (failed) { if (backup) D[c][id] = backup; toast('ลบไม่สำเร็จ: ฐานข้อมูลไม่อนุญาตหรือเชื่อมต่อไม่ได้'); return false; }
+  } else if (DB) {
+    try { await DB.collection(c + '_en').doc(id).delete(); } catch (e) { if (backup) D[c][id] = backup; toast(t('tNoWrite')); return false; }
+  } else {
+    LS('ink-data-en', D);
+  }
+  return true;
+}
+ 
+async function pull() {
+  const rs = await Promise.all(COLS.map(c => SB.from(c).select('id, data')));
+  const bad = rs.find(r => r.error);
+  if (bad) throw bad.error;
+  COLS.forEach((c, i) => { D[c] = {}; rs[i].data.forEach(r => D[c][r.id] = r.data); });
+}
+ 
+async function initSupabase() {
+  if (!SUPA.url || !SUPA.key || !window.supabase) return false;
+  try {
+    SB = window.supabase.createClient(SUPA.url, SUPA.key);
+    await pull();
+    COLS.forEach(c => SB.channel('rt-' + c).on('postgres_changes', { event: '*', schema: 'public', table: c }, p => {
+      if (p.eventType == 'DELETE') delete D[c][p.old.id];
+      else if (p.new && p.new.data) D[c][p.new.id] = p.new.data;
+      if (ready) softGo();
+    }).subscribe());
+    // สำรอง: ดึงข้อมูลใหม่เมื่อกลับมาที่แท็บ และทุก 30 วินาที (กรณี realtime หลุด)
+    const resync = async () => { try { await pull(); softGo(); } catch (e) { console.error('resync failed', e); } };
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) resync(); });
+    setInterval(() => { if (!document.hidden) resync(); }, 30000);
+    ready = true; seed().then(go); return true;
+  } catch (e) {
+    console.error('Supabase connection failed', e);
+    SB = null; setTimeout(() => toast('เชื่อมต่อ Supabase ไม่สำเร็จ - ใช้โหมดในเครื่อง (ไม่ซิงค์ข้ามเครื่อง)'), 800);
+    return false;
+  }
+}
+ 
+const arr = c => Object.values(D[c]), user = () => D.users[me], P = id => D.products[id], cats = () => [...new Set(arr('products').map(p => String(p.cat || '').trim()).filter(Boolean))];
+ 
+async function seed() {
+  if (seeded) return; seeded = true;
+  if (!arr('users').some(u => u.role == 'admin')) {
+    const adm = { id: 'u-admin', user: 'admin', name: 'Administrator', email: 'admin@inkhub.th', pass: await hash('admin123'), role: 'admin', addrs: [], at: Date.now() };
+    if (SB) { // ห้ามเขียนทับแอดมินเดิมในฐานข้อมูล
+      const { error } = await SB.from('users').upsert({ id: adm.id, data: adm, updated_at: new Date().toISOString() }, { onConflict: 'id', ignoreDuplicates: true });
+      if (error) console.error(error); else if (!D.users[adm.id]) D.users[adm.id] = adm;
+    } else await put('users', adm);
+  }
+  // สินค้าตัวอย่าง: สร้างครั้งเดียวเท่านั้นและเฉพาะโหมดในเครื่อง ไม่สร้างใหม่เมื่อลบสินค้าหมด / ไม่สร้างบน Supabase
+  if (!SB && !LS('ink-seeded') && !arr('products').length) {
+    LS('ink-seeded', 1);
+    for (const a of [
+      ['Epson 003 Genuine Ink 4-Color Set', 'Ink', 'Epson', 490, 590, 40, '#00a8e8', 'L1110, L3110, L3210, L3250, L5190'],
+      ['Canon GI-790 Black', 'Ink', 'Canon', 280, 0, 25, '#6b7280', 'G1010, G2010, G3010, G4010'],
+      ['HP 680 Black Ink Cartridge', 'Ink', 'HP', 420, 490, 18, '#6b7280', 'Deskjet 2135, 3635, 4535'],
+      ['Brother BT-D60 Red', 'Ink', 'Brother', 260, 0, 30, '#e6007e', 'DCP-T310, T510W, T710W'],
+      ['Epson EcoTank L3250 Wi-Fi', 'Printers', 'Epson', 5290, 5990, 8, '#00a8e8', 'Print / Copy / Scan · Wi-Fi · Genuine ink tank'],
+      ['Canon PIXMA G3730', 'Printers', 'Canon', 5990, 0, 6, '#e6007e', 'All-in-One · Wi-Fi · Up to 7,700 pages'],
+      ['HP Smart Tank 580', 'Printers', 'HP', 6490, 6990, 5, '#0ea5e9', 'Wi-Fi · ADF · Auto duplex printing'],
+      ['Brother HL-L2386DW Laser', 'Printers', 'Brother', 7900, 0, 4, '#6b7280', 'Mono · Duplex · Wi-Fi · 34 ppm'],
+      ['A4 Copy Paper 80g, 500 Sheets', 'Paper', 'Double A', 139, 0, 200, '#f5b400', 'Smooth, jam-free feeding'],
+      ['Glossy Photo Paper 4x6, 100 Sheets', 'Paper', 'Canon', 169, 199, 60, '#f5b400', 'Water-resistant, fast-dry, vivid color'],
+      ['USB-B Printer Cable 3 m', 'Accessories', 'Ugreen', 99, 0, 70, '#6b7280', 'USB 2.0, works with all brands'],
+      ['Printhead Cleaning Kit', 'Accessories', 'InkHub', 199, 249, 35, '#0ea5e9', 'Fixes clogged nozzles and banding']
+    ]) {
+      await put('products', {
+        id: 'p' + [...a[0]].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7).toString(36),
+        name: a[0], cat: a[1], brand: a[2], price: a[3], old: a[4], stock: a[5], col: a[6], desc: a[7],
+        rate: 4 + Math.round(Math.random() * 9) / 10, at: Date.now()
+      });
+    }
+  }
+}
+ 
+async function init() {
+  if (await initSupabase()) return;
+  try { DB = await claude.use('db'); } catch (e) {}
+  if (DB) {
+    let n = 0;
+    COLS.forEach(c => DB.collection(c + '_en').onSnapshot(s => {
+      D[c] = {}; s.docs.forEach(d => D[c][d.id] = d.data());
+      if (++n == 3 && !ready) { ready = true; seed().then(go); } else if (ready) softGo();
+    }, e => { if (!ready) { DB = null; local(); } }));
+    setTimeout(() => { if (!ready && !DB) local(); }, 9000);
+  } else { local(); }
+}
+ 
+function local() { if (ready) return; D = LS('ink-data-en') || D; ready = true; seed().then(go); }
+function toast(m) { const e = $('#toast'); e.textContent = m; e.className = 'on'; clearTimeout(toast.t); toast.t = setTimeout(() => e.className = '', 2300); }
+const softGo = () => { const a = document.activeElement; if (a && /INPUT|SELECT|TEXTAREA/.test(a.tagName)) return; go(); };
+ 
+/* ---------- Product Visuals & Helpers ---------- */
+const art = p => {
+  const c = p.col || '#6b7280', k = kind(p.cat), raw = String(p.brand || '').slice(0, 12), b = E(raw),
+        fs = n => Math.max(4.5, Math.min(8.5, n / (Math.max(raw.length, 1) * .66))).toFixed(1),
+        sh = w => `<ellipse cx="60" cy="94" rx="${w}" ry="4" fill="#000" opacity=".09"/>`,
+        s = {
+          drop: sh(26) + `<rect x="54" y="2" width="12" height="8" rx="2" fill="#4a4a4a"/><rect x="50" y="8" width="20" height="14" rx="3" fill="#2b2b2b"/><path d="M42 31c0-5 4-9 9-9h18c5 0 9 4 9 9v53a6 6 0 0 1-6 6H48a6 6 0 0 1-6-6z" fill="${c}"/><path d="M46 31h4v50h-4z" fill="#fff" opacity=".22"/><rect x="42" y="44" width="36" height="32" fill="#fff"/><rect x="42" y="44" width="36" height="6" fill="${c}" opacity=".9"/><text x="60" y="63" text-anchor="middle" font-size="${fs(31)}" font-weight="800" font-family="Inter,Arial" fill="#222">${b}</text><rect x="49" y="68" width="22" height="2.5" rx="1" fill="#c4c4c4"/>`,
+          printer: sh(46) + `<path d="M32 16h56l4 24H28z" fill="#fff" stroke="#d2d2d2"/><rect x="12" y="38" width="96" height="42" rx="8" fill="${c}"/><rect x="12" y="38" width="96" height="9" rx="5" fill="#000" opacity=".13"/><rect x="18" y="52" width="24" height="12" rx="2" fill="#0f172a"/><rect x="21" y="56" width="13" height="2" fill="#38bdf8"/><circle cx="99" cy="53" r="2.8" fill="#7cffb2"/><text x="69" y="62" text-anchor="middle" font-size="${fs(42)}" font-weight="800" font-family="Inter,Arial" fill="#fff">${b}</text><rect x="24" y="72" width="72" height="3" fill="#000" opacity=".28"/><path d="M33 76h54l3 15H30z" fill="#fff" stroke="#d2d2d2"/><rect x="39" y="82" width="28" height="2" fill="#cfcfcf"/>`,
+          sheet: sh(34) + `<rect x="26" y="26" width="68" height="64" rx="2" fill="#fff" stroke="#d2d2d2"/><rect x="26" y="19" width="68" height="9" fill="#f1f1f1" stroke="#d2d2d2"/><rect x="26" y="36" width="68" height="40" fill="${c}"/><text x="60" y="54" text-anchor="middle" font-size="${fs(56)}" font-weight="800" font-family="Inter,Arial" fill="#fff">${b}</text><rect x="42" y="62" width="36" height="2.5" fill="#fff" opacity=".75"/><rect x="48" y="68" width="24" height="2.5" fill="#fff" opacity=".5"/>`,
+          plug: sh(34) + `<circle cx="50" cy="58" r="26" fill="none" stroke="${c}" stroke-width="8"/><circle cx="50" cy="58" r="14.5" fill="none" stroke="${c}" stroke-width="8" opacity=".88"/><path d="M74 54c10 0 8-16 16-16" stroke="${c}" stroke-width="5" fill="none" stroke-linecap="round"/><rect x="86" y="22" width="18" height="22" rx="2" fill="#bdbdbd"/><rect x="90" y="15" width="10" height="9" rx="1" fill="#8f8f8f"/>`,
+          box: sh(34) + `<path d="M22 34 60 16l38 18v40L60 92 22 74z" fill="${c}"/><path d="M22 34l38 18 38-18" stroke="#fff" stroke-width="2.4" fill="none" opacity=".8"/><path d="M60 52v40" stroke="#fff" stroke-width="2.4" opacity=".8"/><rect x="66" y="62" width="22" height="14" fill="#fff" transform="rotate(-8 77 69)"/><text x="77" y="72" text-anchor="middle" font-size="${fs(18)}" font-weight="800" font-family="Inter,Arial" fill="#222" transform="rotate(-8 77 69)">${b}</text>`
+        }[k];
+  return `<svg viewBox="0 0 120 100">${s}</svg>`;
+};
+const pic = p => p.img ? `<img src="${E(p.img)}" alt="${E(p.name)}">` : art(p);
+const stars = r => `<span class="star"><svg class="i fill" width="13" height="13" viewBox="0 0 24 24">${I.star}</svg>${(+r || 4.5).toFixed(1)}</span>`;
+const realSold = p => arr('orders').filter(o => o.st != 5).reduce((a, o) => a + (o.items || []).filter(i => i.id == p.id).reduce((x, i) => x + i.q, 0), 0);
+const demo = p => { let h = 0; for (const ch of p.id) h = (h * 31 + ch.charCodeAt(0)) % 9973; return 40 + h % 1900; };
+const sold = p => (p.sold0 ?? demo(p)) + realSold(p);
+const fmt = n => n >= 1000 ? (n / 1000).toFixed(1).replace('.0', '') + 'k' : n;
+const pct = p => p.old > p.price ? Math.round((1 - p.price / p.old) * 100) : 0;
+ 
+const ci = (n, s = 40) => {
+  let g = '';
+  if (n == 'free') g = `<rect x="3" y="12" width="26" height="21" rx="3" fill="#26aa99"/><path d="M29 18h8.5l6.5 7.5V33H29z" fill="#1d8f80"/><path d="M32.5 20.5h4.3l3.7 4.5h-8z" fill="#d6f3ef"/><rect x="7" y="16.5" width="18" height="9" rx="1.6" fill="#fff"/><text x="16" y="23.4" text-anchor="middle" font-size="6.6" font-weight="800" font-family="Inter,Arial" fill="#1d8f80">FREE</text><circle cx="13" cy="35" r="4.6" fill="#2b2b2b"/><circle cx="13" cy="35" r="1.8" fill="#d9d9d9"/><circle cx="36" cy="35" r="4.6" fill="#2b2b2b"/><circle cx="36" cy="35" r="1.8" fill="#d9d9d9"/>`;
+  if (n == 'flash') g = `<path d="M9 16h30l-2 24.5a3 3 0 0 1-3 2.7H14a3 3 0 0 1-3-2.7z" fill="#ee4d2d"/><path d="M16.5 16v-3a7.5 7.5 0 0 1 15 0v3" stroke="#b83214" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M26.5 20 16.5 32h6.5l-2 9.5L32 28h-6.5z" fill="#ffd23f"/>`;
+  if (n == 'voucher') g = `<path d="M4 13h40v7.5a3.8 3.8 0 0 0 0 7.5V36H4v-8a3.8 3.8 0 0 0 0-7.5z" fill="#f5a623"/><path d="M31 13v23" stroke="#fff" stroke-width="1.7" stroke-dasharray="2.6 2.6"/><text x="17" y="29.5" text-anchor="middle" font-size="15" font-weight="800" font-family="Inter,Arial" fill="#fff">%</text><path d="M37.5 19.5l1.3 3.3 3.5.2-2.7 2.2.9 3.4-3-1.9-3 1.9.9-3.4-2.7-2.2 3.5-.2z" fill="#fff"/>`;
+  if (n == 'spin') {
+    const cl = ['#ee4d2d', '#ffd23f', '#26aa99', '#4aa3ff', '#ee4d2d', '#ffd23f'], pp = a => [24 + 19 * Math.sin(a * Math.PI / 180), 26 - 19 * Math.cos(a * Math.PI / 180)];
+    g = cl.map((c, i) => { const [x0, y0] = pp(i * 60), [x1, y1] = pp(i * 60 + 60); return `<path d="M24 26L${x0.toFixed(2)} ${y0.toFixed(2)}A19 19 0 0 1 ${x1.toFixed(2)} ${y1.toFixed(2)}Z" fill="${c}"/>`; }).join('') + `<circle cx="24" cy="26" r="19" fill="none" stroke="#fff" stroke-width="2"/><circle cx="24" cy="26" r="5.5" fill="#fff"/><circle cx="24" cy="26" r="2.3" fill="#ee4d2d"/><path d="M24 3.5l-3.5 5.5h7z" fill="#2b2b2b"/>`;
+  }
+  if (n == 'best') g = `<path d="M24 3c2.2 7.5 12 11.5 12 23a12 12 0 0 1-24 0c0-5.5 3.2-8.7 5.5-12 .6 3.3 2.2 5.5 4.3 5.5-1.2-5.5-.6-11.5 2.2-16.5z" fill="#ff5a1f"/><path d="M24 24c1.7 3.3 5.5 5.3 5.5 9.8a5.5 5.5 0 0 1-11 0c0-3.3 3.2-4.5 3.8-6.8.6 1.2 1.1 1.7 1.7 1.7z" fill="#ffd23f"/>`;
+  if (n == 'new') {
+    const pts = [...Array(16)].map((_, i) => { const r = i % 2 ? 15.5 : 22, a = i * 22.5 * Math.PI / 180; return (24 + r * Math.sin(a)).toFixed(1) + ',' + (24 - r * Math.cos(a)).toFixed(1); }).join(' ');
+    g = `<polygon points="${pts}" fill="#ffc400"/><text x="24" y="28" text-anchor="middle" font-size="10" font-weight="800" font-family="Inter,Arial" fill="#d62d00">NEW</text>`;
+  }
+  return `<svg width="${s}" height="${s}" viewBox="0 0 48 48">${g}</svg>`;
+};
+ 
+const catThumb = c => { const l = arr('products').filter(p => String(p.cat).trim() == c), p = l.find(x => x.img) || l[0]; return p ? pic(p) : ic(kind(c), 30); };
+const heroProds = (ex = []) => arr('products').filter(p => p.stock > 0 && !ex.includes(p.id)).sort((a, b) => pct(b) - pct(a) || sold(b) - sold(a)).slice(0, 4), HB = ['#ee4d2d', '#1f2a44', '#0f766e', '#6d3b8f'];
+const card = (p, fl) => {
+  const s = sold(p);
+  return `<div class="card" style="--col:${p.col}"><a href="#/p/${p.id}"><div class="th">${pic(p)}</div></a>${pct(p) ? `<span class="dc">-${pct(p)}%</span>` : ''}<button class="hrt ${wl.includes(p.id) ? 'on' : ''}" onclick="wish('${p.id}',this,event)" aria-label="${t('save')}">${ic('heart', 17)}</button><div class="b"><a href="#/p/${p.id}" class="nm">${E(p.name)}</a>${fl ? `<div class="stk"><i style="width:${Math.max(10, Math.min(96, Math.round(s / (s + Math.max(p.stock, 1)) * 100)))}%"></i><span>${t('sold', fmt(s))}</span></div>` : `<div class="row">${stars(p.rate)}<span class="sold">${t('soldN', fmt(s))}</span></div>`}${p.stock > 0 && p.stock <= 5 ? `<span class="left">${t('left', p.stock)}</span>` : p.price >= 1500 ? `<span class="fs">${t('freeTag')}</span>` : ''}<div class="row" style="margin-top:auto"><span><span class="pr">${B(p.price)}</span>${p.old ? `<span class="old">${B(p.old)}</span>` : ''}</span>${p.stock > 0 ? `<button class="btn s sq" onclick="add('${p.id}')" aria-label="${t('addCart')}">${ic('cart', 17)}</button>` : `<span class="tag r">${t('soldOut')}</span>`}</div></div></div>`;
+};
+const wish = (id, b, e) => { e.preventDefault(); e.stopPropagation(); wl = wl.includes(id) ? wl.filter(x => x != id) : [...wl, id]; LS('ink-wl', wl); b.classList.toggle('on'); };
+ 
+/* ---------- Layout & Navigation ---------- */
+const KW = [['Epson L3250', 'Epson L3250', 'L3250'], ['Canon GI-790', 'Canon GI-790', 'GI-790'], ['HP Smart Tank', 'HP Smart Tank', 'Smart Tank'], ['A4 paper', 'กระดาษ A4', 'A4'], ['Laser printer', 'เครื่องพิมพ์เลเซอร์', 'Laser'], ['Cleaning kit', 'ชุดล้างหัวพิมพ์', 'Cleaning']];
+const head = () => {
+  const u = user(), n = cart.reduce((a, c) => a + c.q, 0), bp = bump; bump = false;
+  return `<header><div class="top"><div class="w row"><div class="l"><span>${ic('truck', 15)}${t('topShip')}</span><span>${ic('shield', 15)}${t('topGen')}</span></div><div class="r"><span class="lang"><a class="${lang == 'en' ? 'on' : ''}" onclick="setLang('en')">EN</a><a class="${lang == 'th' ? 'on' : ''}" onclick="setLang('th')">ไทย</a></span>${u ? `${u.role == 'admin' ? `<a href="#/admin">${t('admin')}</a>` : ''}<a href="#/orders">${t('orders')}</a><a href="#/account">${ic('user', 15)}${E(u.name.split(' ')[0])}</a><a onclick="out()">${t('logout')}</a>` : `<a href="#/register">${t('signup')}</a><a href="#/login">${t('login')}</a>`}</div></div></div>
+  <div class="w nav"><a href="#/" class="logo" onclick="q='';cat='';deal=false;onlyW=false">${logo()}InkHub</a><div><form class="sb" onsubmit="srch(event)"><input id="sq" placeholder="${t('searchPh')}" value="${E(q)}"><button aria-label="Search">${ic('search', 20)}</button></form><div class="kw">${KW.map(k => `<a onclick="kwd('${k[2]}')">${lang == 'th' ? k[1] : k[0]}</a>`).join('')}</div></div><a href="#/cart" class="crt" aria-label="Cart">${ic('cart', 28)}<span class="badge ${bp ? 'bump' : ''}">${n}</span></a></div></header>`;
+};
+const srch = e => { e.preventDefault(); kwd($('#sq').value); }, kwd = v => { q = v.trim(); cat = ''; deal = false; onlyW = false; if (location.hash != '#/' && location.hash != '') location.hash = '#/'; else go(); setTimeout(() => sc('shop'), 80); }, sc = id => { const e = document.getElementById(id); e && e.scrollIntoView({ behavior: 'smooth' }); };
+const shell = h => head() + `<div class="w fade">${h}</div><footer><div class="w"><div class="fg"><div><b>${t('cust')}</b><span>${t('cust1')}</span><span>${t('cust2')}</span><span>${t('cust3')}</span></div><div><b>${t('shopT')}</b><span>${t('shop1')}</span><span>${t('shop2')}</span><span>${t('shop3')}</span></div><div><b>${t('payT')}</b><span>PromptPay QR</span><span>${t('pb')}</span><span>${t('pc')} · ${t('pd')}</span></div></div><div style="border-top:1px solid var(--line);padding-top:16px">${t('copy')}</div></div></footer>`;
+ 
+/* ---------- Storefront & Shop Views ---------- */
+const list = () => {
+  let l = arr('products').filter(p => (!cat || String(p.cat).trim() == cat) && (!deal || pct(p)) && (!onlyW || wl.includes(p.id)) && (p.name + p.brand + (p.desc || '') + p.cat + tc(p.cat)).toLowerCase().includes(q.toLowerCase()));
+  if (sort == 'a' || sort == 'd') l.sort((a, b) => sort == 'a' ? a.price - b.price : b.price - a.price);
+  if (sort == 's') l.sort((a, b) => sold(b) - sold(a));
+  if (sort == 'n') l.sort((a, b) => (b.at || 0) - (a.at || 0));
+  return l.map(p => card(p)).join('') || `<p class="mut" style="padding:30px;background:#fff;grid-column:1/-1;text-align:center">${t('none')}</p>`;
+};
+const pick = c => { cat = cat == c ? '' : c; q = ''; deal = false; onlyW = false; go(); setTimeout(() => sc('shop'), 60); }, goSl = i => { slide = i; showSl(); }, showSl = () => { const s = document.querySelectorAll('.sl'), d = document.querySelectorAll('.dots i'); if (!s.length) return; slide = (slide + s.length) % s.length; s.forEach((e, i) => e.classList.toggle('on', i == slide)); d.forEach((e, i) => e.classList.toggle('on', i == slide)); };
+setInterval(() => { slide++; showSl(); }, 4800);
+const p2 = n => String(n).padStart(2, '0'), tick = () => { const e = $('#cd'); if (!e) return; const n = new Date(), end = new Date(); end.setHours(24, 0, 0, 0); let s = Math.max(0, Math.floor((end - n) / 1000)); e.innerHTML = `<b>${p2(Math.floor(s / 3600))}</b>:<b>${p2(Math.floor(s % 3600 / 60))}</b>:<b>${p2(s % 60)}</b>`; }; setInterval(tick, 1000);
+const vlab = c => ({ INK10: t('v10'), FREESHIP: t('vFree'), SAVE50: t('v50') }[c] || c);
+const claim = c => { if (!wal.includes(c)) { wal = [...wal, c]; LS('ink-wallet', wal); } toast(t('tClaim')); go(); };
+ 
+function home() {
+  const flash = arr('products').filter(p => pct(p) && p.stock > 0).sort((a, b) => pct(b) - pct(a)).slice(0, 5),
+        rv = (LS('ink-rv') || []).map(P).filter(Boolean).slice(0, 6), cs = cats(), ap = arr('products'),
+        best = [...ap].sort((x, y) => sold(y) - sold(x))[0], nw = [...ap].filter(x => !best || x.id != best.id).sort((x, y) => (y.at || 0) - (x.at || 0))[0],
+        hp = (heroProds([best && best.id, nw && nw.id]).length ? heroProds([best && best.id, nw && nw.id]) : heroProds()),
+        spot = (p, l) => p ? `<a class="sp1" href="#/p/${p.id}"><div class="im">${pic(p)}</div><div><span class="lb">${l}</span><b>${E(p.name)}</b><span class="pr">${B(p.price)}</span></div></a>` : '<div></div>',
+        sl = (p, i) => `<div class="sl ${i ? '' : 'on'}" style="background:${HB[i % 4]}"><div><span class="tg">${pct(p) ? t('hot') + ' -' + pct(p) + '%' : t('feat')}</span><h3>${E(p.name)}</h3><p>${E(String(p.desc || '').slice(0, 90))}</p><div class="pp">${B(p.price)}${p.old ? `<s>${B(p.old)}</s>` : ''}</div><a class="cta" href="#/p/${p.id}">${t('viewP')}${ic('chev', 16)}</a></div><a href="#/p/${p.id}" class="hp">${pic(p)}</a></div>`,
+        vc = (c, l, sm) => `<div class="vc"><div class="vl"><div>${t(l)}</div></div><div class="vr"><b>${c}</b><span class="mut">${t(sm)}</span><div>${wal.includes(c) ? `<span class="tag g">${t('claimed')}</span>` : `<button class="btn s" onclick="claim('${c}')">${t('claim')}</button>`}</div></div></div>`;
+  
+  return shell(`<div class="hero"><div class="sld">${hp.length ? hp.map(sl).join('') : `<div class="sl on" style="background:var(--o)"><div><h3>${t('h1t')}</h3><p>${t('h1p')}</p></div></div>`}<div class="dots">${hp.map((_, i) => `<i class="${i ? '' : 'on'}" onclick="goSl(${i})"></i>`).join('')}</div></div><div class="sd">${spot(best, t('pBest'))}${spot(nw, t('pNew'))}</div></div>
+  <div class="pk"><div class="it" onclick="sc('vouchers')"><div class="ib">${ci('free')}</div>${t('pFree')}</div><div class="it" onclick="sc('fl')"><div class="ib">${ci('flash')}</div>${t('pFlash')}</div><div class="it" onclick="sc('vouchers')"><div class="ib">${ci('voucher')}</div>${t('pVou')}</div><div class="it" onclick="openSpin()"><div class="ib">${ci('spin')}</div>${t('pSpin')}</div><div class="it" onclick="sort='s';cat='';q='';go();setTimeout(()=>sc('shop'),60)"><div class="ib">${ci('best')}</div>${t('pBest')}</div><div class="it" onclick="sort='n';cat='';q='';go();setTimeout(()=>sc('shop'),60)"><div class="ib">${ci('new')}</div>${t('pNew')}</div></div>
+  <div class="sec" id="vouchers"><div class="sh"><h2>${ci('voucher', 24)}${t('vTitle')}</h2></div><div class="vs">${vc('INK10', 'v10', 'v10s')}${vc('FREESHIP', 'vFree', 'vFrees')}${vc('SAVE50', 'v50', 'v50s')}</div></div>
+  ${flash.length ? `<div class="sec" id="fl"><div class="sh"><h2 class="o">${ci('flash', 26)}${t('flash')}</h2><div class="cd">${t('endsIn')} <span id="cd" class="cd"></span></div><a onclick="deal=true;cat='';q='';go();setTimeout(()=>sc('shop'),60)">${t('seeAll')}${ic('chev', 14)}</a></div><div class="grid fl">${flash.map(p => card(p, 1)).join('')}</div></div>` : ''}
+  ${cs.length ? `<div class="sec"><div class="sh"><h2>${t('cats')}</h2></div><div class="cats">${cs.map(c => `<div class="cat ${cat == c ? 'on' : ''}" onclick="pick('${E(c).replace(/&#39;/g, '')}')"><div class="ci">${catThumb(c)}</div><b>${E(tc(c))}</b><span class="mut">${t('items', arr('products').filter(p => String(p.cat).trim() == c).length)}</span></div>`).join('')}</div></div>` : ''}
+  ${rv.length ? `<div class="sec"><div class="sh"><h2>${t('recent')}</h2></div><div class="grid rv">${rv.map(p => card(p)).join('')}</div></div>` : ''}
+  <div class="tabs" id="shop"><div>${t('rec')}${q ? ` · "${E(q)}"` : ''}${cat ? ' · ' + E(tc(cat)) : ''}</div></div>
+  <div class="tools"><span class="mut">${t('sortBy')}</span><select onchange="sort=this.value;$('#grid').innerHTML=list()"><option value="">${t('sDef')}</option><option value="s" ${sort == 's' ? 'selected' : ''}>${t('sBest')}</option><option value="n" ${sort == 'n' ? 'selected' : ''}>${t('sNew')}</option><option value="a" ${sort == 'a' ? 'selected' : ''}>${t('sLo')}</option><option value="d" ${sort == 'd' ? 'selected' : ''}>${t('sHi')}</option></select><span class="chip ${deal ? 'on' : ''}" onclick="deal=!deal;go()">${ic('bolt', 14)}${t('deals')}</span><span class="chip ${onlyW ? 'on' : ''}" onclick="onlyW=!onlyW;go()">${ic('heart', 14)}${t('saved', wl.length)}</span>${q || cat || deal || onlyW ? `<span class="chip" onclick="q='';cat='';deal=false;onlyW=false;go()">${ic('x', 13)}${t('clear')}</span>` : ''}<span class="mut" style="margin-left:auto">${t('total', arr('products').length)}</span></div><div class="grid" id="grid">${list()}</div>`);
+}
+ 
+function prod(i) {
+  const p = P(i); if (!p) return shell(`<p class="ld">${t('nf')}</p>`);
+  const rv = [i, ...(LS('ink-rv') || []).filter(x => x != i)].slice(0, 8); LS('ink-rv', rv);
+  return shell(`<div class="crumb"><a href="#/">${t('home')}</a>${ic('chev', 12)}<a href="#/" onclick="cat='${E(String(p.cat).trim()).replace(/&#39;/g, '')}'">${E(tc(p.cat))}</a>${ic('chev', 12)}<span>${E(p.name)}</span></div><div class="box" style="display:grid;grid-template-columns:420px 1fr;gap:28px" id="pd"><div class="card" style="--col:${p.col}"><div class="th">${pic(p)}</div>${pct(p) ? `<span class="dc">-${pct(p)}%</span>` : ''}</div><div><h2 style="font:600 21px/1.3 'Inter','Noto Sans Thai';margin:0 0 8px">${E(p.name)}</h2><div class="row" style="justify-content:flex-start;gap:18px">${stars(p.rate)}<span class="mut">${t('soldN', fmt(sold(p)))}</span><span class="tag g">${t('genuine')}</span></div><div class="pband"><span class="pr">${B(p.price)}</span>${p.old ? `<span class="old" style="font-size:16px">${B(p.old)}</span> <span class="tag">-${pct(p)}%</span>` : ''}</div><p class="mut">${t('brand')}: ${E(p.brand)} · ${t('cat')}: ${E(tc(p.cat))}</p><p>${kind(p.cat) == 'drop' ? `<span class="mut">${t('compat')}:</span> ` : ''}${E(p.desc)}</p><p class="mut">${t('shipL')}: ${p.price >= 1500 ? `<b class="g">${t('shipFree')}</b>` : t('shipFee')}</p><div class="row" style="justify-content:flex-start;gap:16px;margin:16px 0"><span class="mut">${t('qty')}</span><span class="qb"><button onclick="qv(-1)">${ic('minus', 14)}</button><input id="qty" type="number" min="1" max="${p.stock}" value="1"><button onclick="qv(1)">${ic('plus', 14)}</button></span><span class="mut">${t('inStock', p.stock)}</span></div><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn o" style="padding:12px 22px" ${p.stock > 0 ? '' : 'disabled'} onclick="add('${p.id}',+$('#qty').value)">${ic('cart', 18)}${t('addBtn')}</button><button class="btn" style="padding:12px 40px" ${p.stock > 0 ? '' : 'disabled'} onclick="add('${p.id}',+$('#qty').value,1)">${t('buyNow')}</button></div><div class="pf"><div>${ic('shield', 22)}${t('pf1')}</div><div>${ic('truck', 22)}${t('pf2')}</div><div>${ic('return', 22)}${t('pf3')}</div></div></div></div><style>@media(max-width:800px){#pd{grid-template-columns:1fr!important}}</style>`);
+}
+ 
+const qv = d => { const e = $('#qty'); e.value = Math.max(1, Math.min(+e.max, (+e.value || 1) + d)); };
+function add(i, n = 1, buy) {
+  const p = P(i), c = cart.find(x => x.id == i), tt = (c ? c.q : 0) + (n || 1);
+  if (tt > p.stock) return toast(t('tStock'));
+  c ? c.q = tt : cart.push({ id: i, q: n || 1 });
+  LS('ink-cart', cart); bump = true; toast(t('tAdded'));
+  if (buy) location.hash = '#/cart'; else go();
+}
+ 
+const sub = () => cart.reduce((a, c) => a + (P(c.id) ? P(c.id).price * c.q : 0), 0),
+      shp = () => !cart.length ? 0 : (selS == 'exp' ? 120 : 0) + ((selS == 'std' && sub() < 1500 && !(cp && COUP[cp].ship)) ? 60 : 0),
+      dsc = () => !cp ? 0 : COUP[cp].p ? Math.round(sub() * COUP[cp].p) : COUP[cp].f && sub() >= (COUP[cp].min || 0) ? COUP[cp].f : 0,
+      tot = () => sub() - dsc() + shp();
+ 
+const sum = b => `<div class="box" ${b ? 'style="position:sticky;top:140px"' : ''}><b>${t('sumT')}</b><div class="row" style="margin-top:12px"><span class="mut">${t('subtotal')}</span><span>${B(sub())}</span></div><div class="row"><span class="mut">${t('shipping')}</span><span>${shp() ? B(shp()) : t('freeW')}</span></div>${dsc() ? `<div class="row"><span class="mut">${t('disc', cp)}</span><span class="g">-${B(dsc())}</span></div>` : ''}<hr style="border:0;border-top:1px solid var(--line)"><div class="row"><b>${t('totalL')}</b><span class="pr" style="font-size:24px">${B(tot())}</span></div>${b ? `<div class="row" style="margin:14px 0 0"><input id="cpi" placeholder="${t('promoPh')}" value="${cp || ''}"><button class="btn o" onclick="coupon()">${t('apply')}</button></div>${wal.length ? `<div class="wal">${wal.map(c => `<span class="chip ${cp == c ? 'on' : ''}" onclick="$('#cpi').value='${c}';coupon()">${ic('voucher', 14)}${vlab(c)}</span>`).join('')}</div>` : ''}<button class="btn blk" style="margin-top:14px" onclick="location.hash='#/checkout'">${t('toCheckout')}</button>` : ''}</div>`;
+ 
+const coupon = () => {
+  const v = $('#cpi').value.trim().toUpperCase();
+  if (COUP[v]) {
+    if (COUP[v].min && sub() < COUP[v].min) { cp = null; toast(t('tMin')); } else { cp = v; toast(t('tCode')); }
+  } else { cp = null; toast(t('tBad')); }
+  go();
+}, qty = (i, n) => { cart.find(c => c.id == i).q = Math.max(1, Math.min(n || 1, P(i).stock)); LS('ink-cart', cart); go(); }, del = i => { cart = cart.filter(c => c.id != i); LS('ink-cart', cart); go(); };
+ 
+function cartV() {
+  cart = cart.filter(c => P(c.id)); const s = sub(), far = Math.max(0, 1500 - s);
+  return shell(`<h2 style="padding:22px 0 14px;font:600 20px 'Inter','Noto Sans Thai';margin:0">${t('cartT')}</h2>${cart.length ? `<div class="fsb"><div class="row"><span>${ic('truck', 18)} ${far ? t('fsAway', '<b class="g">' + B(far) + '</b>') : '<b class="g">' + t('fsDone') + '</b>'}</span><span class="mut">${B(s)} / ${B(1500)}</span></div><div class="bar"><i style="width:${Math.min(100, Math.round(s / 1500 * 100))}%"></i></div></div><div class="two"><div class="box sc"><table><tr><th>${t('prodH')}</th><th>${t('qtyH')}</th><th>${t('totH')}</th><th></th></tr>${cart.map(c => { const p = P(c.id); return `<tr><td><div style="display:flex;gap:12px;align-items:center"><div class="th" style="width:64px;height:64px;aspect-ratio:auto;border-radius:4px">${pic(p)}</div><div><a href="#/p/${p.id}"><b>${E(p.name)}</b></a><div class="mut">${B(p.price)} · ${t('stockLeft', p.stock)}</div></div></div></td><td><input type="number" min="1" max="${p.stock}" value="${c.q}" style="width:76px" onchange="qty('${p.id}',+this.value)"></td><td><b class="g">${B(p.price * c.q)}</b></td><td><button class="btn o s" onclick="del('${p.id}')">${t('remove')}</button></td></tr>`; }).join('')}</table></div>${sum(1)}</div>` : `<div class="box" style="text-align:center;padding:60px"><div style="color:#c9c9c9">${ic('cart', 64)}</div><p class="mut">${t('empty')}</p><a class="btn" href="#/">${t('startShop')}</a></div>`}`);
+}
+ 
+/* ---------- Address & Checkout ---------- */
+const addrForm = () => `<form class="f" onsubmit="addA(event)"><div class="f2"><label>${t('recName')}<input name="name" required></label><label>${t('phone')}<input name="phone" required pattern="[0-9]{9,10}" inputmode="numeric"></label></div><label>${t('address')}<input name="line" required placeholder="${t('addrPh')}"></label><div class="f2"><label>${t('prov')}<input name="prov" required></label><label>${t('zip')}<input name="zip" required pattern="[0-9]{5}" inputmode="numeric"></label></div><button class="btn">${t('saveAddr')}</button></form>`;
+async function addA(e) { e.preventDefault(); const f = Object.fromEntries(new FormData(e.target)), u = user(); f.id = 'a' + Date.now(); u.addrs = [...(u.addrs || []), f]; selA = f.id; if (await put('users', u)) { toast(t('tAddr')); go(); } }
+const delA = async i => { const u = user(); u.addrs = u.addrs.filter(a => a.id != i); await put('users', u); go(); };
+ 
+function checkout() {
+  const u = user(); if (!u) { location.hash = '#/login'; return ''; }
+  cart = cart.filter(c => P(c.id)); if (!cart.length) { location.hash = '#/cart'; return ''; }
+  if (!selA && u.addrs[0]) selA = u.addrs[0].id;
+  return shell(`<h2 style="padding:22px 0 14px;font:600 20px 'Inter','Noto Sans Thai';margin:0">${t('checkout')}</h2><div class="two"><div><div class="box"><b><span class="nb">1</span>${t('s1')}</b><div class="pay" style="margin:12px 0">${(u.addrs || []).map(a => `<label><input type="radio" name="ad" ${selA == a.id ? 'checked' : ''} onchange="selA='${a.id}'"><span><b>${E(a.name)}</b> · ${E(a.phone)}<br><span class="mut">${E(a.line)} ${E(a.prov)} ${E(a.zip)}</span></span></label>`).join('')}</div><details ${(u.addrs || []).length ? '' : 'open'}><summary style="cursor:pointer;color:var(--o)">+ ${t('addNew')}</summary><div style="margin-top:12px">${addrForm()}</div></details></div>
+  <div class="box"><b><span class="nb">2</span>${t('s2')}</b><div class="pay" style="margin-top:12px"><label><input type="radio" name="sh" ${selS == 'std' ? 'checked' : ''} onchange="selS='std';go()"><span>${t('std')} <span class="mut">${sub() >= 1500 ? t('freeW') : '฿60'}</span></span></label><label><input type="radio" name="sh" ${selS == 'exp' ? 'checked' : ''} onchange="selS='exp';go()"><span>${t('exp')} <span class="mut">฿120</span></span></label></div></div>
+  <div class="box"><b><span class="nb">3</span>${t('s3')}</b><div class="pay" style="margin-top:12px">${['qr', 'bank', 'card', 'cod'].map(k => `<label><input type="radio" name="pm" ${selP == k ? 'checked' : ''} onchange="selP='${k}';go()">${PAYN(k)}</label>`).join('')}</div>${selP == 'qr' ? `<div class="qr"></div><p class="mut" style="text-align:center">${t('scan')}</p>` : ''}${selP == 'bank' ? `<p class="mut">${t('bankInfo')}</p>` : ''}${selP == 'card' ? `<div class="f" style="margin-top:12px"><input placeholder="${t('cardNo')}" inputmode="numeric" maxlength="19"><div class="f2"><input placeholder="MM/YY"><input placeholder="CVV" maxlength="3"></div></div>` : ''}</div></div><div>${sum(0)}<button class="btn blk" style="padding:14px" onclick="place()">${t('place')}</button></div></div>`);
+}
+ 
+async function place() {
+  const u = user(), a = (u.addrs || []).find(x => x.id == selA); if (!a) return toast(t('tNoAddr'));
+  for (const c of cart) if (P(c.id).stock < c.q) return toast(t('tOut') + P(c.id).name);
+  const now = Date.now(), st = selP == 'cod' ? 2 : selP == 'card' ? 1 : 0,
+        o = { id: 'INK' + String(now).slice(-8), uid: u.id, items: cart.map(c => ({ id: c.id, name: P(c.id).name, price: P(c.id).price, q: c.q })), addr: a, pay: selP, ship: shp(), disc: dsc(), total: tot(), st, slip: selP == 'card' ? { ref: 'CARD', time: 'Auto-approved' } : null, trk: '', carrier: '', at: now, log: [{ s: st, t: now }] };
+  if (!await put('orders', o)) return;
+  for (const c of cart) { const p = P(c.id); p.stock -= c.q; await put('products', p); }
+  if (cp && wal.includes(cp)) { wal = wal.filter(x => x != cp); LS('ink-wallet', wal); }
+  cart = []; LS('ink-cart', cart); cp = null; toast(t('tPlaced') + o.id); location.hash = '#/orders';
+}
+ 
+const dt = x => new Date(x).toLocaleString(lang == 'th' ? 'th-TH' : 'en-GB', { dateStyle: 'short', timeStyle: 'short' }),
+      tl = o => o.st == 5 ? `<span class="tag r">${STN(5)}</span>` : `<div class="tl">${[0, 1, 2, 3, 4].map(i => `<div class="${i <= o.st ? 'on' : ''}">${STN(i)}${(o.log || []).find(l => l.s == i) ? `<br><small>${dt(o.log.find(l => l.s == i).t)}</small>` : ''}</div>`).join('')}</div>`;
+ 
+function orders() {
+  const u = user(); if (!u) { location.hash = '#/login'; return ''; }
+  const l = arr('orders').filter(o => o.uid == u.id).sort((a, b) => b.at - a.at);
+  return shell(`<h2 style="padding:22px 0 14px;font:600 20px 'Inter','Noto Sans Thai';margin:0">${t('myOrders')}</h2>${l.map(o => `<div class="box"><div class="row"><b>#${o.id}</b><span class="mut">${dt(o.at)}</span></div>${tl(o)}${o.trk ? `<p>${ic('truck', 16)} ${E(o.carrier)} · ${t('trkNo')} <b>${E(o.trk)}</b></p>` : ''}<p class="mut">${o.items.map(i => E(i.name) + ' ×' + i.q).join(' · ')}</p><p class="mut">${t('shipTo')}: ${E(o.addr.name)} ${E(o.addr.line)} ${E(o.addr.prov)} ${E(o.addr.zip)}</p><div class="row"><span>${PAYN(o.pay)} · <b class="pr" style="font-size:18px">${B(o.total)}</b></span><span style="display:flex;gap:8px;flex-wrap:wrap">${o.st == 0 && !o.slip ? `<button class="btn s" onclick="notify('${o.id}')">${t('repPay')}</button>` : o.st == 0 ? `<span class="tag y">${t('verify')}</span>` : ''}${o.st == 0 ? `<button class="btn o s" onclick="cancel('${o.id}')">${t('cancel')}</button>` : ''}${o.st == 3 ? `<button class="btn s" onclick="done('${o.id}')">${t('recvd')}</button>` : ''}</span></div></div>`).join('') || `<div class="box" style="text-align:center;padding:50px"><p class="mut">${t('noOrders')}</p></div>`}`);
+}
+ 
+async function setSt(id, s) { const o = D.orders[id]; o.st = s; o.log = [...(o.log || []), { s, t: Date.now() }]; await put('orders', o); }
+const notify = async id => { const r = prompt(t('promptRef')); if (!r) return; const o = D.orders[id]; o.slip = { ref: r, time: dt(Date.now()) }; await put('orders', o); toast(t('tRep')); go(); },
+      done = async id => { await setSt(id, 4); go(); },
+      cancel = async id => { if (!confirm(t('confCancel'))) return; const o = D.orders[id]; for (const i of o.items) if (P(i.id)) { P(i.id).stock += i.q; await put('products', P(i.id)); } await setSt(id, 5); go(); };
+ 
+/* ---------- Account & Authentication ---------- */
+function account() {
+  const u = user(); if (!u) { location.hash = '#/login'; return ''; }
+  return shell(`<h2 style="padding:22px 0 14px;font:600 20px 'Inter','Noto Sans Thai';margin:0">${t('myAcct')}</h2><div class="two"><div class="box"><b>${t('profile')}</b><form class="f" style="margin-top:12px" onsubmit="prof(event)"><label>${t('fullName')}<input name="name" value="${E(u.name)}" required></label><label>${t('email')}<input name="email" type="email" value="${E(u.email)}" required></label><label>${t('newPass')}<input name="pass" type="password" minlength="6" placeholder="${t('keep')}"></label><button class="btn">${t('savebtn')}</button></form></div><div class="box"><b>${t('shipAddr')}</b>${(u.addrs || []).map(a => `<div class="row" style="margin:10px 0"><span><b>${E(a.name)}</b><br><span class="mut">${E(a.line)} ${E(a.prov)} ${E(a.zip)}</span></span><button class="btn o s" onclick="delA('${a.id}')">${t('remove')}</button></div>`).join('')}<div style="margin-top:12px">${addrForm()}</div></div></div>`);
+}
+async function prof(e) { e.preventDefault(); const f = Object.fromEntries(new FormData(e.target)), u = user(); u.name = f.name; u.email = f.email; if (f.pass) u.pass = await hash(f.pass); if (await put('users', u)) { toast(t('tSaved')); go(); } }
+ 
+const authV = r => head() + `<div class="authbg"><div class="auth box fade"><span class="mono">${r ? t('createAcc') : t('welcome')}</span><h2 style="margin:6px 0 18px;font:600 22px 'Inter','Noto Sans Thai'">${r ? t('signup') : t('login')}</h2><form class="f" onsubmit="${r ? 'doReg' : 'doLogin'}(event)">${r ? `<label>${t('fullName')}<input name="name" required></label><label>${t('username')}<input name="user" required minlength="4" pattern="[A-Za-z0-9_.]+"></label><label>${t('email')}<input name="email" type="email" required></label>` : `<label>${t('uoe')}<input name="u" required></label>`}<label>${t('password')}<input name="p" type="password" required minlength="${r ? 6 : 1}"></label><button class="btn blk" style="padding:12px">${r ? t('signup') : t('login')}</button></form><p class="mut" style="margin-bottom:0;text-align:center">${r ? `${t('haveAcc')} <a href="#/login" class="g">${t('login')}</a>` : `${t('noAcc')} <a href="#/register" class="g">${t('signup')}</a>`}</p></div></div>`;
+ 
+async function doLogin(e) {
+  e.preventDefault(); const f = Object.fromEntries(new FormData(e.target)), h = await hash(f.p), u = arr('users').find(x => (x.user == f.u || x.email == f.u) && (x.pass == h));
+  if (!u) return toast(t('tBadLogin')); me = u.id; LS('ink-me', me); location.hash = u.role == 'admin' ? '#/admin' : '#/';
+}
+async function doReg(e) {
+  e.preventDefault(); const f = Object.fromEntries(new FormData(e.target));
+  if (arr('users').some(x => x.user == f.user || x.email == f.email)) return toast(t('tUsed'));
+  const u = { id: 'u' + Date.now(), user: f.user, name: f.name, email: f.email, pass: await hash(f.p), role: 'customer', addrs: [], at: Date.now() };
+  if (!await put('users', u)) return; me = u.id; LS('ink-me', me); toast(t('tAcc')); location.hash = '#/';
+}
+const out = () => { me = null; LS('ink-me', null); location.hash = '#/'; };
+ 
+/* ---------- Admin Panel & Product Management ---------- */
+let pend;
+function pickImg(i) {
+  const f = i.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    const im = new Image();
+    im.onload = () => {
+      const k = Math.min(1, 800 / Math.max(im.width, im.height)), c = document.createElement('canvas');
+      c.width = im.width * k; c.height = im.height * k; c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+      let qq = .74, d; do { d = c.toDataURL('image/jpeg', qq); qq -= .1; } while (d.length > 190000 && qq > .2);
+      pend = d; const v = $('#pv'); v.style.display = 'flex'; v.querySelector('img').src = d;
+    }; im.src = r.result;
+  }; r.readAsDataURL(f);
+}
+ 
+const setTab = k => { aTab = k; pend = undefined; editId = null; go(); };
+ 
+function admin() {
+  const u = user(); if (!u || u.role != 'admin') { location.hash = '#/login'; return ''; }
+  const TT = { dash: ['overview', 'dash'], ord: ['aOrders', 'list'], prod: ['aProducts', 'box'], usr: ['aMembers', 'users'] },
+        O = arr('orders').sort((a, b) => b.at - a.at), paid = O.filter(o => o.st > 0 && o.st < 5); let c = '';
+ 
+  if (aTab == 'dash') {
+    const days = [...Array(7)].map((_, i) => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - 6 + i); return { d, v: paid.filter(o => new Date(o.at).setHours(0, 0, 0, 0) == +d).reduce((a, o) => a + o.total, 0) }; }),
+          mx = Math.max(1, ...days.map(x => x.v));
+    c = `<div class="st"><div class="box"><span class="mono">${t('sales')}</span><b class="g">${B(paid.reduce((a, o) => a + o.total, 0))}</b></div><div class="box"><span class="mono">${t('aOrders')}</span><b>${O.length}</b></div><div class="box"><span class="mono">${t('pending')}</span><b>${O.filter(o => o.st < 3).length}</b></div><div class="box"><span class="mono">${t('members')}</span><b>${arr('users').filter(x => x.role != 'admin').length}</b></div></div><div class="two"><div class="box"><b>${t('sales7')}</b><div class="bars" style="margin-top:16px">${days.map(x => `<div><i style="height:${x.v / mx * 100}%"></i>${x.d.getDate()}/${x.d.getMonth() + 1}</div>`).join('')}</div></div><div class="box"><b>${t('lowStock')}</b><table>${arr('products').filter(p => p.stock < 10).map(p => `<tr><td>${E(p.name)}</td><td><span class="tag r">${p.stock}</span></td></tr>`).join('') || `<tr><td class="mut">${t('noneL')}</td></tr>`}</table></div></div>`;
+  }
+  if (aTab == 'ord') {
+    c = `<div class="box sc"><table><tr><th>${t('orderNo')}</th><th>${t('recipient')}</th><th>${t('totPay')}</th><th>${t('status')}</th><th>${t('parcel')}</th></tr>${O.map(o => `<tr><td><b>#${o.id}</b><br><span class="mut">${dt(o.at)}</span></td><td>${E(o.addr.name)} ${E(o.addr.phone)}<br><span class="mut">${E(o.addr.line)} ${E(o.addr.prov)}</span><br><span class="mut">${o.items.map(i => E(i.name) + '×' + i.q).join(', ')}</span></td><td>${B(o.total)}<br><span class="mut">${PAYN(o.pay)}</span>${o.slip ? `<br><span class="tag g">${t('paid')}: ${E(o.slip.ref)}</span>` : ''}</td><td>${o.st == 5 ? `<span class="tag r">${STN(5)}</span>` : `<select onchange="setSt('${o.id}',+this.value).then(()=>toast(t('tStatus')))">${[0, 1, 2, 3, 4].map(i => `<option value="${i}" ${o.st == i ? 'selected' : ''}>${STN(i)}</option>`).join('')}</select>`}</td><td><input placeholder="${t('carrier')}" value="${E(o.carrier)}" style="width:130px" onchange="trk('${o.id}','carrier',this.value)"><input placeholder="${t('trkPh')}" value="${E(o.trk)}" style="width:150px;margin-top:6px" onchange="trk('${o.id}','trk',this.value)"></td></tr>`).join('') || `<tr><td colspan=5 class="mut">${t('noOrd')}</td></tr>`}</table></div>`;
+  }
+  if (aTab == 'prod') {
+    const e = editId ? P(editId) : { name: '', cat: '', brand: '', price: '', old: '', stock: '', col: '#6b7280', desc: '' };
+    c = `<div class="box"><b>${editId ? t('editP') : t('addP')}</b><form class="f" style="margin-top:12px" onsubmit="saveP(event)"><div class="f2"><label>${t('pName')}<input name="name" required value="${E(e.name)}"></label><label>${t('pBrand')}<input name="brand" required value="${E(e.brand)}"></label></div><div class="f2"><label>${t('pCat')}<input name="cat" list="catl" required autocomplete="off" placeholder="${t('catPh')}" value="${E(e.cat)}"><datalist id="catl">${cats().map(x => `<option value="${E(x)}">`).join('')}</datalist></label><label>${t('pColor')}<input name="col" type="color" value="${E(e.col)}"></label></div><div class="f2"><label>${t('pPrice')}<input name="price" type="number" min="0" required value="${e.price}"></label><label>${t('pOld')}<input name="old" type="number" min="0" value="${e.old || ''}"></label></div><div class="f2"><label>${t('pStockL')}<input name="stock" type="number" min="0" required value="${e.stock}"></label><label>${t('pSold')}<input name="sold0" type="number" min="0" value="${e.sold0 ?? ''}"></label></div><label>${t('pDesc')}<input name="desc" value="${E(e.desc)}"></label><label>${t('photo')}<input type="file" accept="image/*" onchange="pickImg(this)"></label><div id="pv" style="display:${e.img ? 'flex' : 'none'};gap:12px;align-items:center"><img src="${E(e.img || '')}" style="max-height:110px;border-radius:4px"><button type="button" class="btn o s" onclick="pend='';$('#pv').style.display='none'">${t('rmPhoto')}</button></div><div style="display:flex;gap:8px"><button class="btn">${t('savebtn')}</button>${editId ? `<button type="button" class="btn o" onclick="setTab('prod')">${t('cancelB')}</button>` : ''}</div></form></div><div class="box sc"><table>${arr('products').map(p => `<tr><td>${E(p.name)}<br><span class="mut">${E(tc(p.cat))} · ${E(p.brand)}</span></td><td>${B(p.price)}</td><td>${p.stock}</td><td style="white-space:nowrap"><button class="btn o s" onclick="editId='${p.id}';pend=undefined;go();scrollTo(0,0)">${t('edit')}</button> <button class="btn d s" onclick="delP('${p.id}')">${t('del')}</button></td></tr>`).join('')}</table></div>`;
+  }
+  if (aTab == 'usr') {
+    c = `<div class="box sc"><table><tr><th>${t('nameL')}</th><th>${t('userL')}</th><th>${t('email')}</th><th>${t('ordersL')}</th><th>${t('joined')}</th></tr>${arr('users').filter(x => x.role != 'admin').map(x => `<tr><td>${E(x.name)}</td><td>${E(x.user)}</td><td>${E(x.email)}</td><td>${O.filter(o => o.uid == x.id).length}</td><td class="mut">${x.at ? dt(x.at) : '-'}</td></tr>`).join('') || `<tr><td colspan=5 class="mut">${t('noMem')}</td></tr>`}</table></div>`;
+  }
+  return `<div class="adm"><nav class="side"><div class="logo" style="margin-bottom:18px;color:var(--ink)">${logo('#ee4d2d', '#fff', 32)}InkHub</div>${Object.entries(TT).map(([k, v]) => `<a class="${aTab == k ? 'on' : ''}" onclick="setTab('${k}')">${ic(v[1], 18)}${t(v[0])}</a>`).join('')}<div class="sp"></div><div style="padding:10px 14px"><span class="lang" style="border-color:#ddd;color:var(--mut)"><a class="${lang == 'en' ? 'on' : ''}" style="padding:1px 11px;${lang == 'en' ? 'background:var(--o);color:#fff' : ''}" onclick="setLang('en')">EN</a><a class="${lang == 'th' ? 'on' : ''}" style="padding:1px 11px;${lang == 'th' ? 'background:var(--o);color:#fff' : ''}" onclick="setLang('th')">ไทย</a></span></div><a href="#/">${ic('store', 18)}${t('viewStore')}</a><a onclick="out()">${ic('out', 18)}${t('logout')}</a></nav><div class="main fade"><h2 style="margin:0 0 6px;font:600 22px 'Inter','Noto Sans Thai'">${t(TT[aTab][0])}</h2>${c}</div></div>`;
+}
+ 
+const trk = async (id, k, v) => { const o = D.orders[id]; o[k] = v; await put('orders', o); toast(t('tSaved')); },
+      delP = async i => {
+        if (confirm(t('confDel'))) {
+          if (await rm('products', i)) {
+            let rv = LS('ink-rv') || []; LS('ink-rv', rv.filter(x => x !== i));
+            let w = (LS('ink-wl') || []).filter(x => x !== i); LS('ink-wl', w); wl = w;
+            cart = cart.filter(x => x.id !== i); LS('ink-cart', cart);
+            toast(t('tSaved'));
+          }
+          go();
+        }
+      };
+ 
+async function saveP(e) {
+  e.preventDefault(); const f = Object.fromEntries(new FormData(e.target));
+  f.cat = f.cat.trim(); f.price = +f.price; f.old = +f.old || 0; f.stock = +f.stock;
+  const hs = f.sold0 !== ''; f.sold0 = hs ? +f.sold0 : null;
+  if (pend !== undefined) f.img = pend; pend = undefined;
+  const o = editId ? { ...P(editId), ...f } : { id: 'p' + Date.now().toString(36), rate: 4.6, at: Date.now(), ...f };
+  if (!hs) delete o.sold0;
+  if (await put('products', o)) { toast(t('tProd')); editId = null; go(); }
+}
+ 
+/* ---------- Lucky Spin Wheel Feature ---------- */
+const PZ = ['INK10', 'FREESHIP', 'SAVE50', 'NONE', 'INK10', 'FREESHIP'], pzl = c => c == 'NONE' ? t('lTry') : vlab(c), today = () => new Date().toDateString();
+let spun = false, rot = 0;
+ 
+const wheel = () => {
+  const R = 140, pt = (a, r = R) => [150 + r * Math.sin(a * Math.PI / 180), 150 - r * Math.cos(a * Math.PI / 180)];
+  return `<svg class="w1" id="wl" viewBox="0 0 300 300" style="transform:rotate(${rot}deg)">${PZ.map((c, i) => { const [x0, y0] = pt(i * 60), [x1, y1] = pt(i * 60 + 60), f = i % 2 ? '#fff3ee' : '#ee4d2d', tc2 = i % 2 ? '#c93a1c' : '#fff'; return `<path d="M150 150 L${x0} ${y0} A${R} ${R} 0 0 1 ${x1} ${y1}Z" fill="${f}" stroke="#fff" stroke-width="2"/><text transform="rotate(${i * 60 + 30} 150 150)" x="150" y="52" text-anchor="middle" font-family="Inter,Noto Sans Thai" font-weight="700" font-size="14" fill="${tc2}">${E(pzl(c))}</text>`; }).join('')}</svg>`;
+};
+function openSpin() {
+  const done = LS('ink-spin') == today(); spun = false;
+  $('#mb').innerHTML = `<button class="mx" onclick="closeM()" aria-label="Close">${ic('x', 16)}</button><h3>${t('spinT')}</h3><span class="mut">${done ? t('spinAgain') : t('spinS')}</span><div class="wh"><svg class="pt" width="28" height="30" viewBox="0 0 28 30"><path d="M14 30 2 8a14 14 0 1 1 24 0z" fill="#1f1f1f"/><circle cx="14" cy="12" r="4" fill="#fff"/></svg>${wheel()}<div class="hub">${ic('bolt', 20)}</div></div><div id="sr" style="min-height:44px"></div><button class="btn blk" id="sb" style="padding:12px" ${done ? 'disabled' : ''} onclick="doSpin()">${t('spinGo')}</button>`;
+  $('#md').classList.add('on');
+}
+const closeM = () => $('#md').classList.remove('on');
+function doSpin() {
+  if (spun || LS('ink-spin') == today()) return; spun = true; $('#sb').disabled = true;
+  const i = Math.floor(Math.random() * PZ.length), c = PZ[i];
+  rot += 360 * 6 + ((360 - (i * 60 + 30)) - (rot % 360) + 360) % 360;
+  const w = $('#wl'); w.style.transform = `rotate(${rot}deg)`; LS('ink-spin', today());
+  setTimeout(() => {
+    if (c == 'NONE') $('#sr').innerHTML = `<p style="margin:10px 0 0;font-weight:600">${t('spinLose')}</p>`;
+    else {
+      if (!wal.includes(c)) { wal = [...wal, c]; LS('ink-wallet', wal); }
+      $('#sr').innerHTML = `<p style="margin:10px 0 2px;font:700 18px 'Inter','Noto Sans Thai';color:var(--o)">${t('spinWon', E(pzl(c)))}</p><span class="mut">${t('spinUse')}</span>`;
+      $('#sb').outerHTML = `<button class="btn blk" style="padding:12px;margin-top:10px" onclick="closeM();location.hash='#/cart'">${t('spinCart')}</button>`;
+    }
+  }, 5200);
+}
+ 
+/* ---------- Floating Actions & Router Execution ---------- */
+document.body.insertAdjacentHTML('beforeend', `<button class="fab" id="fab" onclick="openSpin()"></button>`);
+const fabL = () => { $('#fab').innerHTML = ci('spin', 26) + t('pSpin'); $('#up').innerHTML = ic('up', 20); };
+addEventListener('scroll', () => $('#up').classList.toggle('on', scrollY > 600), { passive: true });
+ 
+let rpI = 0;
+setInterval(() => {
+  const r = location.hash.slice(2).split('/')[0]; if (!ready || ['admin', 'login', 'register', 'checkout', 'cart'].includes(r)) return;
+  const o = arr('orders').filter(o => o.st != 5 && o.items && o.items[0] && o.addr).sort((a, b) => b.at - a.at).slice(0, 6);
+  if (!o.length) return; const x = o[rpI++ % o.length], e = $('#rp');
+  e.innerHTML = `<span class="rpi">${ic('pin', 18)}</span><div><span class="mut">${t('rpWho', E(x.addr.prov))}</span><br><b>${E(x.items[0].name)}</b></div>`;
+  e.classList.add('on'); setTimeout(() => e.classList.remove('on'), 5200);
+}, 14000);
+ 
+function go() {
+  if (!ready) return;
+  const [r, a] = location.hash.slice(2).split('/'); let v;
+  if (r == 'admin') v = admin();
+  else if (r == 'p') v = prod(a);
+  else if (r == 'cart') v = cartV();
+  else if (r == 'checkout') v = checkout();
+  else if (r == 'orders') v = orders();
+  else if (r == 'account') v = account();
+  else if (r == 'login') v = authV(0);
+  else if (r == 'register') v = authV(1);
+  else v = home();
+  if (v) { $('#app').innerHTML = v; slide = 0; document.body.classList.toggle('adm-on', r == 'admin'); fabL(); tick(); }
+}
+ 
+addEventListener('hashchange', () => { scrollTo(0, 0); go(); });
+document.documentElement.lang = lang; fabL(); init();
+</script>
+</body>
+</html>
